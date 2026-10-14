@@ -18,6 +18,7 @@ const DEFAULT_RT_PROFILE = {
   nama_sekretaris: 'Ibu Siti Rahmawati, S.Pd',
   nik_sekretaris: '3276015508820002',
   format_nomor_surat: '{nomor}/RT.{rt}/RW.{rw}/{bulan_romawi}/{tahun}',
+  admin_pin: '123456', // Default PIN Pengurus RT
   logo_url: '',
   ttd_digital_url: '',
   stempel_url: ''
@@ -102,6 +103,33 @@ const DEFAULT_WARGA = [
   }
 ]
 
+const DEFAULT_OTPS = [
+  {
+    id: 'otp_demo_1',
+    otp_code: '888999',
+    nama_penerima: 'Warga Umum RT 005',
+    no_hp: '',
+    nik_terkait: null,
+    role: 'warga',
+    status: 'active',
+    max_uses: 0,
+    used_count: 0,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'otp_demo_2',
+    otp_code: '123456',
+    nama_penerima: 'Ahmad Faisal Pratama',
+    no_hp: '081298765432',
+    nik_terkait: '3276011505920003',
+    role: 'warga',
+    status: 'active',
+    max_uses: 0,
+    used_count: 0,
+    created_at: new Date().toISOString()
+  }
+]
+
 // Get config from localStorage or Vite env
 export const getSupabaseConfig = () => {
   const localUrl = localStorage.getItem('RT_SUPABASE_URL')
@@ -159,6 +187,19 @@ const setLocalData = (key, value) => {
   }
 }
 
+// Session Management
+export const getAuthSession = () => {
+  return getLocalData('RT_AUTH_SESSION', null)
+}
+
+export const setAuthSession = (session) => {
+  setLocalData('RT_AUTH_SESSION', session)
+}
+
+export const clearAuthSession = () => {
+  localStorage.removeItem('RT_AUTH_SESSION')
+}
+
 // Unified Database Access Layer (Supabase with seamless LocalStorage fallback)
 export const db = {
   // Test connection
@@ -209,7 +250,172 @@ export const db = {
     return merged
   },
 
-  // Warga CRUD
+  // ==================== AUTH & OTP ACCESS ====================
+  async verifyCode(code) {
+    const cleanCode = (code || '').trim()
+    if (!cleanCode) {
+      return { success: false, message: 'Kode tidak boleh kosong.' }
+    }
+
+    const profile = await this.getProfile()
+
+    // 1. Check if it's the Admin PIN
+    const adminPin = profile.admin_pin || '123456'
+    if (cleanCode === adminPin) {
+      const adminSession = {
+        role: 'pengurus',
+        nama: profile.nama_ketua_rt || 'Pengurus RT',
+        nik: profile.nik_ketua_rt || '',
+        loginAt: new Date().toISOString()
+      }
+      setAuthSession(adminSession)
+      return { success: true, role: 'pengurus', session: adminSession }
+    }
+
+    // 2. Check in OTP database
+    const client = getSupabaseClient()
+    let otpRecord = null
+
+    if (client) {
+      try {
+        const { data, error } = await client
+          .from('rt_access_otp')
+          .select('*')
+          .eq('otp_code', cleanCode)
+          .single()
+        if (!error && data) {
+          otpRecord = data
+        }
+      } catch (e) {
+        console.warn('Supabase OTP lookup error:', e)
+      }
+    }
+
+    if (!otpRecord) {
+      const localOtps = getLocalData('RT_OTP_LIST', DEFAULT_OTPS)
+      otpRecord = localOtps.find(o => o.otp_code === cleanCode)
+    }
+
+    if (!otpRecord) {
+      return { success: false, message: 'Kode OTP tidak valid atau belum terdaftar.' }
+    }
+
+    if (otpRecord.status !== 'active') {
+      return { success: false, message: 'Kode OTP ini sudah tidak aktif atau telah dinonaktifkan oleh Pengurus RT.' }
+    }
+
+    if (otpRecord.expires_at && new Date(otpRecord.expires_at) < new Date()) {
+      return { success: false, message: 'Kode OTP ini telah melewati batas masa berlaku (kadaluarsa).' }
+    }
+
+    // If max_uses is set (e.g., 1 for single-use)
+    const newUsedCount = (otpRecord.used_count || 0) + 1
+    let newStatus = otpRecord.status
+    if (otpRecord.max_uses > 0 && newUsedCount >= otpRecord.max_uses) {
+      newStatus = 'used'
+    }
+
+    const updatedOtp = { ...otpRecord, used_count: newUsedCount, status: newStatus }
+
+    // Update OTP record
+    if (client) {
+      try {
+        await client.from('rt_access_otp').update(updatedOtp).eq('id', otpRecord.id)
+      } catch (e) {
+        console.error('Failed to update OTP usage count in Supabase:', e)
+      }
+    }
+    const localOtps = getLocalData('RT_OTP_LIST', DEFAULT_OTPS)
+    setLocalData(
+      'RT_OTP_LIST',
+      localOtps.map(o => (o.id === otpRecord.id ? updatedOtp : o))
+    )
+
+    const wargaSession = {
+      role: otpRecord.role || 'warga',
+      nama: otpRecord.nama_penerima,
+      nik: otpRecord.nik_terkait || null,
+      no_hp: otpRecord.no_hp || '',
+      otpCode: cleanCode,
+      loginAt: new Date().toISOString()
+    }
+    setAuthSession(wargaSession)
+    return { success: true, role: otpRecord.role || 'warga', session: wargaSession }
+  },
+
+  async getOTPList() {
+    const client = getSupabaseClient()
+    if (client) {
+      try {
+        const { data, error } = await client
+          .from('rt_access_otp')
+          .select('*')
+          .order('created_at', { ascending: false })
+        if (!error && data) return data
+      } catch (e) {
+        console.warn('Fallback to local OTPs:', e)
+      }
+    }
+    return getLocalData('RT_OTP_LIST', DEFAULT_OTPS)
+  },
+
+  async createOTP(payload) {
+    const client = getSupabaseClient()
+    const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'otp_' + Date.now()
+    const newRecord = {
+      id: newId,
+      created_at: new Date().toISOString(),
+      status: 'active',
+      used_count: 0,
+      ...payload
+    }
+
+    if (client) {
+      try {
+        const { data, error } = await client.from('rt_access_otp').insert(newRecord).select().single()
+        if (!error && data) return data
+      } catch (e) {
+        console.error('Supabase create OTP error:', e)
+      }
+    }
+
+    const all = await this.getOTPList()
+    const updated = [newRecord, ...all]
+    setLocalData('RT_OTP_LIST', updated)
+    return newRecord
+  },
+
+  async revokeOTP(id) {
+    const client = getSupabaseClient()
+    if (client) {
+      try {
+        await client.from('rt_access_otp').update({ status: 'revoked' }).eq('id', id)
+      } catch (e) {
+        console.error('Supabase revoke OTP error:', e)
+      }
+    }
+    const all = await this.getOTPList()
+    const updated = all.map(o => (o.id === id ? { ...o, status: 'revoked' } : o))
+    setLocalData('RT_OTP_LIST', updated)
+    return true
+  },
+
+  async deleteOTP(id) {
+    const client = getSupabaseClient()
+    if (client) {
+      try {
+        await client.from('rt_access_otp').delete().eq('id', id)
+      } catch (e) {
+        console.error('Supabase delete OTP error:', e)
+      }
+    }
+    const all = await this.getOTPList()
+    const filtered = all.filter(o => o.id !== id)
+    setLocalData('RT_OTP_LIST', filtered)
+    return true
+  },
+
+  // ==================== WARGA CRUD ====================
   async getWarga() {
     const client = getSupabaseClient()
     if (client) {
@@ -273,7 +479,7 @@ export const db = {
     return true
   },
 
-  // Surat Arsip
+  // ==================== SURAT ARSIP ====================
   async getSuratList() {
     const client = getSupabaseClient()
     if (client) {
@@ -344,7 +550,7 @@ export const db = {
     return true
   },
 
-  // Nomor Urut Surat
+  // ==================== NOMOR URUT SURAT ====================
   async getNextNomorSurat(tahun = new Date().getFullYear()) {
     const client = getSupabaseClient()
     if (client) {
@@ -366,4 +572,3 @@ export const db = {
     return nextNum
   }
 }
-

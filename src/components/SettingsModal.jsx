@@ -239,6 +239,22 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
 
                 <div className="sm:col-span-3">
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    PIN Akses Pengurus RT (Admin PIN)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={profileData.admin_pin || '123456'}
+                    onChange={e => setProfileData({ ...profileData, admin_pin: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 font-mono font-bold text-blue-700 focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    PIN rahasia ini digunakan oleh Pengurus RT untuk mengakses data arsip, mengelola warga, dan menerbitkan kode OTP.
+                  </p>
+                </div>
+
+                <div className="sm:col-span-3">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Format Template Penomoran Surat
                   </label>
                   <input

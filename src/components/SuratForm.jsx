@@ -35,7 +35,7 @@ const ICONS = {
   Truck
 }
 
-export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCancel }) {
+export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCancel, currentSession }) {
   const [selectedJenis, setSelectedJenis] = useState(JENIS_SURAT_CONFIG[0].id)
   const [selectedWargaId, setSelectedWargaId] = useState('')
   const [wargaSearch, setWargaSearch] = useState('')
@@ -110,6 +110,32 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
     }
     loadNextNomor()
   }, [rtProfile, tanggalSurat])
+
+  // Pre-fill if warga is logged in with linked resident profile
+  useEffect(() => {
+    if (currentSession && currentSession.role === 'warga') {
+      if (currentSession.nik) {
+        const found = wargaList.find(w => w.nik === currentSession.nik)
+        if (found) {
+          handleSelectWarga(found)
+          return
+        }
+      }
+      if (currentSession.nama) {
+        const found = wargaList.find(w => w.nama_lengkap.toLowerCase() === currentSession.nama.toLowerCase())
+        if (found) {
+          handleSelectWarga(found)
+          return
+        }
+        setPemohon(prev => ({
+          ...prev,
+          nama_lengkap: currentSession.nama,
+          nik: currentSession.nik || prev.nik,
+          no_hp: currentSession.no_hp || prev.no_hp
+        }))
+      }
+    }
+  }, [currentSession, wargaList])
 
   // Update keperluan default when jenis surat changes
   const handleJenisChange = (id) => {

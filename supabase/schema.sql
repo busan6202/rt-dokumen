@@ -24,6 +24,7 @@ create table if not exists public.rt_profile (
     nama_sekretaris varchar(120) default 'Ibu Siti Rahmawati, S.Pd',
     nik_sekretaris varchar(20) default '3276015508820002',
     format_nomor_surat text default '{nomor}/RT.{rt}/RW.{rw}/{bulan_romawi}/{tahun}',
+    admin_pin varchar(20) default '123456', -- PIN Pengurus RT untuk akses penuh
     logo_url text,
     ttd_digital_url text,
     stempel_url text,
@@ -113,43 +114,50 @@ begin
 end;
 $$ language plpgsql;
 
--- 5. ROW LEVEL SECURITY (RLS) POLICIES
+-- 5. TABEL KODE AKSES / OTP WARGA (PENGAMANAN AKSES PORTAL SURAT)
+create table if not exists public.rt_access_otp (
+    id uuid primary key default uuid_generate_v4(),
+    otp_code varchar(10) not null unique,
+    nama_penerima varchar(150) not null,
+    no_hp varchar(25),
+    nik_terkait varchar(16),
+    role varchar(20) not null default 'warga' check (role in ('warga', 'pengurus')),
+    status varchar(20) not null default 'active' check (status in ('active', 'used', 'revoked')),
+    max_uses integer default 0, -- 0 = unlimited during validity period, 1 = single use
+    used_count integer default 0,
+    expires_at timestamp with time zone,
+    catatan text,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_otp_code on public.rt_access_otp(otp_code);
+
+-- 6. ROW LEVEL SECURITY (RLS) POLICIES
 alter table public.rt_profile enable row level security;
 alter table public.warga enable row level security;
 alter table public.surat enable row level security;
 alter table public.nomor_surat_counter enable row level security;
+alter table public.rt_access_otp enable row level security;
 
 -- Kebijakan Akses:
--- A. Profil RT: Siapa saja bisa membaca (untuk kop surat & verifikasi), edit diizinkan untuk anon/auth
-create policy "Public read rt_profile" on public.rt_profile for select using (true);
-create policy "Allow all edit rt_profile" on public.rt_profile for all using (true);
-
--- B. Warga: Baca & Kelola Data
-create policy "Allow all read warga" on public.warga for select using (true);
-create policy "Allow all insert/update warga" on public.warga for all using (true);
-
--- C. Surat:
--- Semua orang bisa membaca surat berdasarkan qr_token (untuk verifikasi keaslian surat jika di-scan pihak berwenang)
-create policy "Public read surat" on public.surat for select using (true);
-create policy "Allow all insert surat" on public.surat for insert with check (true);
-create policy "Allow all update surat" on public.surat for update using (true);
-create policy "Allow all delete surat" on public.surat for delete using (true);
-
--- D. Counter:
+create policy "Allow all rt_profile" on public.rt_profile for all using (true);
+create policy "Allow all warga" on public.warga for all using (true);
+create policy "Allow all surat" on public.surat for all using (true);
 create policy "Allow all counter" on public.nomor_surat_counter for all using (true);
+create policy "Allow all otp" on public.rt_access_otp for all using (true);
 
--- 6. DATA CONTOH AWAL (SEED DATA)
+-- 7. DATA CONTOH AWAL (SEED DATA)
 -- Inisialisasi Profil RT
 insert into public.rt_profile (
     id, rt_number, rw_number, kelurahan, kecamatan, kota_kabupaten, provinsi, kode_pos,
     alamat_sekretariat, kontak_telepon, email, nama_ketua_rt, nik_ketua_rt,
-    nama_sekretaris, nik_sekretaris
+    nama_sekretaris, nik_sekretaris, admin_pin
 ) values (
     'a0000000-0000-0000-0000-000000000001',
     '005', '012', 'Sukamaju', 'Cilodong', 'Kota Depok', 'Jawa Barat', '16415',
     'Balai Warga RT 005, Jl. Cempaka Indah No. 45', '0812-3456-7890', 'rt005rw012@gmail.com',
     'Bpk. H. Bambang Sudirman', '3276011204780001',
-    'Ibu Siti Rahmawati, S.Pd', '3276015508820002'
+    'Ibu Siti Rahmawati, S.Pd', '3276015508820002', '123456'
 ) on conflict (id) do nothing;
 
 -- Inisialisasi Data Warga Contoh
@@ -163,3 +171,10 @@ insert into public.warga (
 ('3276014203020006', '3276010202150002', 'Rian Hidayat', 'Laki-laki', 'Depok', '2002-03-02', 'Islam', 'Belum Kawin', 'Mahasiswa', 'WNI', 'Jl. Cempaka Indah Blok A No. 04', '005', '012', '087812349988')
 on conflict (nik) do nothing;
 
+-- Inisialisasi Kode OTP Contoh Awal
+insert into public.rt_access_otp (
+    otp_code, nama_penerima, no_hp, nik_terkait, role, status, max_uses, used_count
+) values 
+('888999', 'Warga Umum RT 005', '0812-3456-7890', null, 'warga', 'active', 0, 0),
+('123456', 'Ahmad Faisal Pratama', '081298765432', '3276011505920003', 'warga', 'active', 0, 0)
+on conflict (otp_code) do nothing;

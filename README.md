@@ -37,7 +37,14 @@ Aplikasi web modern berbasis **Serverless** untuk pengelolaan dan penerbitan sur
    - Filter per jenis surat dan tanggal.
    - Cetak ulang dokumen kapan saja dan fitur ekspor riwayat ke file CSV/Excel.
 
-7. **Arsitektur Serverless & Mode Hybrid**:
+7. **Sistem Keamanan Akses Terbatas (OTP Warga & PIN Admin)**:
+   - **Login OTP Warga**: Akses portal surat dibatasi hanya untuk warga yang telah diberikan kode OTP 6-digit oleh Ketua RT/Pengurus.
+   - **Kirim via WhatsApp**: Pengurus RT dapat membuat OTP dan membagikannya langsung ke WhatsApp warga lengkap dengan tautan sekali klik (`?otp=XXXXXX`).
+   - **Autofill Otomatis**: Jika OTP dikaitkan dengan NIK/Nama warga, formulir surat otomatis terisi identitas warga tersebut.
+   - **Masa Berlaku Fleksibel**: Pengurus RT dapat mengatur masa aktif OTP (24 jam, 7 hari, 30 hari, atau 1x pakai).
+   - **PIN Pengurus RT (Admin)**: Akses penuh untuk Ketua RT/Sekretaris mengelola profil RT, buku warga, dan seluruh riwayat surat.
+
+8. **Arsitektur Serverless & Mode Hybrid**:
    - **Dapat langsung digunakan tanpa setup (Mode Demo / LocalStorage)**.
    - **Dapat dihubungkan ke Supabase** untuk sinkronisasi database cloud multi-pengurus.
 
