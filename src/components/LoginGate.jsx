@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { db } from '../supabaseClient'
+import { formatWhatsAppNumber } from '../utils/helpers'
 import {
   KeyRound,
   ShieldAlert,
@@ -97,7 +98,8 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
     }
   }
 
-  const contactRtWhatsAppUrl = `https://wa.me/${(rtProfile?.kontak_telepon || '+62081254873133').replace(/\D/g, '')}?text=${encodeURIComponent(
+  const targetWaNumber = formatWhatsAppNumber(rtProfile?.kontak_telepon || '081254873133')
+  const contactRtWhatsAppUrl = `https://wa.me/${targetWaNumber}?text=${encodeURIComponent(
     `Halo Pengurus RT ${rtProfile?.rt_number || '025'} / RW ${rtProfile?.rw_number || 'IX'}.\nSaya warga dengan NIK: ${reqNik || '...'} ingin mendaftar dan meminta kode akses OTP untuk membuat surat RT online.\nTerima kasih.`
   )}`
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { db } from '../supabaseClient'
-import { formatTanggalIndo } from '../utils/helpers'
+import { formatTanggalIndo, formatWhatsAppNumber } from '../utils/helpers'
 import {
   KeyRound,
   Plus,
@@ -146,7 +146,7 @@ export default function OtpManager({ rtProfile, wargaList }) {
 
   const sendWhatsApp = (item) => {
     const link = getDirectLink(item.otp_code)
-    const phone = (item.no_hp || '').replace(/\D/g, '')
+    const phone = item.no_hp ? formatWhatsAppNumber(item.no_hp) : ''
     const message = `Halo Bpk/Ibu ${item.nama_penerima},\n\nBerikut tautan resmi untuk membuat surat keterangan / pengantar RT ${rtProfile.rt_number} / RW ${rtProfile.rw_number}:\n${link}\n\nKode Akses OTP Anda: *${item.otp_code}*\n\nSilakan klik tautan di atas untuk langsung masuk. Terima kasih.\n- Pengurus RT ${rtProfile.rt_number}`
 
     const waUrl = phone

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { db } from '../supabaseClient'
-import { formatTanggalIndo } from '../utils/helpers'
+import { formatTanggalIndo, formatWhatsAppNumber } from '../utils/helpers'
 import {
   Users,
   Plus,
@@ -174,7 +174,7 @@ export default function WargaManager({ wargaList, onRefreshWarga, rtProfile }) {
                     <td className="px-5 py-3.5 text-xs">
                       {w.no_hp ? (
                         <a
-                          href={`https://wa.me/${w.no_hp.replace(/\D/g, '')}`}
+                          href={`https://wa.me/${formatWhatsAppNumber(w.no_hp)}`}
                           target="_blank"
                           rel="noreferrer"
                           className="text-emerald-600 hover:underline inline-flex items-center gap-1 font-mono text-[11px]"

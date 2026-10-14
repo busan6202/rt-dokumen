@@ -161,3 +161,17 @@ export const exportToCSV = (data, filename = 'arsip-surat-rt.csv') => {
   document.body.removeChild(link)
 }
 
+// Format nomor WhatsApp standar internasional Indonesia (awalan 62 tanpa 0 di depan)
+export const formatWhatsAppNumber = (phone) => {
+  if (!phone) return '6281254873133'
+  let clean = phone.toString().replace(/\D/g, '')
+  if (clean.startsWith('620')) {
+    clean = '62' + clean.substring(3)
+  } else if (clean.startsWith('0')) {
+    clean = '62' + clean.substring(1)
+  } else if (!clean.startsWith('62')) {
+    clean = '62' + clean
+  }
+  return clean
+}
+
