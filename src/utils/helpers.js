@@ -167,6 +167,8 @@ export const formatWhatsAppNumber = (phone) => {
   let clean = phone.toString().replace(/\D/g, '')
   if (clean.startsWith('620')) {
     clean = '62' + clean.substring(3)
+  } else if (clean.startsWith('6181254873133')) {
+    clean = '6281254873133'
   } else if (clean.startsWith('0')) {
     clean = '62' + clean.substring(1)
   } else if (!clean.startsWith('62')) {

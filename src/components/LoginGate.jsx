@@ -99,9 +99,9 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
   }
 
   const targetWaNumber = formatWhatsAppNumber(rtProfile?.kontak_telepon || '081254873133')
-  const contactRtWhatsAppUrl = `https://wa.me/${targetWaNumber}?text=${encodeURIComponent(
-    `Halo Pengurus RT ${rtProfile?.rt_number || '025'} / RW ${rtProfile?.rw_number || 'IX'}.\nSaya warga dengan NIK: ${reqNik || '...'} ingin mendaftar dan meminta kode akses OTP untuk membuat surat RT online.\nTerima kasih.`
-  )}`
+  const defaultRequestText = `Halo Pengurus RT ${rtProfile?.rt_number || '025'} / RW ${rtProfile?.rw_number || 'IX'}. Saya warga ingin meminta kode akses/OTP untuk membuat surat pengantar online. Terima kasih.`
+  const requestOtpWhatsAppUrl = `https://wa.me/${targetWaNumber}?text=${encodeURIComponent(defaultRequestText)}`
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex flex-col items-center justify-center p-4 py-10">
@@ -229,11 +229,21 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
                 )}
               </button>
 
-              <div className="text-center pt-2">
+              <div className="pt-2 space-y-2">
+                <a
+                  href={requestOtpWhatsAppUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-2.5 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-2 border border-emerald-200 shadow-sm"
+                >
+                  <Phone className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                  Minta Kode OTP via WhatsApp Pengurus RT
+                </a>
+
                 <button
                   type="button"
                   onClick={() => setActiveTab('request')}
-                  className="text-xs text-blue-600 hover:underline font-semibold"
+                  className="w-full text-center text-xs text-blue-600 hover:underline font-semibold py-1 block"
                 >
                   Belum punya kode? Minta OTP baru otomatis di sini &rarr;
                 </button>
@@ -296,7 +306,7 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
                         <p>{notRegisteredInfo}</p>
                       </div>
                       <a
-                        href={contactRtWhatsAppUrl}
+                        href={requestOtpWhatsAppUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center justify-center gap-1.5 w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition"
@@ -324,6 +334,18 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
                       </>
                     )}
                   </button>
+
+                  <div className="pt-1 text-center">
+                    <a
+                      href={requestOtpWhatsAppUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-emerald-700 hover:text-emerald-800 hover:underline font-semibold inline-flex items-center gap-1.5"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      Minta kode akses via WhatsApp Pengurus RT &rarr;
+                    </a>
+                  </div>
                 </form>
               ) : (
                 /* Generated Dynamic OTP Result */
