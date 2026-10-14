@@ -185,7 +185,7 @@ export default function App() {
               </div>
               <div>
                 <h1 className="text-sm md:text-base font-black text-slate-900 leading-tight">
-                  SURAT RT {rtProfile.rt_number} / RW {rtProfile.rw_number}
+                  RT.{rtProfile.rt_number ? rtProfile.rt_number.replace(/^0+/, '') : '25'} / RW. {rtProfile.rw_number || 'IX'}
                 </h1>
                 <p className="text-[11px] text-slate-500 leading-none">
                   Kel. {rtProfile.kelurahan}, Kec. {rtProfile.kecamatan}

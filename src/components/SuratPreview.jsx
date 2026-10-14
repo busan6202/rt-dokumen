@@ -94,13 +94,19 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
 
               {/* Kop Text */}
               <div className="flex-1 text-center px-4">
-                <h3 className="text-sm md:text-base font-bold uppercase tracking-wider text-slate-900">
-                  PENGURUS RUKUN TETANGGA {rtProfile.rt_number} / RUKUN WARGA {rtProfile.rw_number}
-                </h3>
-                <h2 className="text-base md:text-lg font-black uppercase tracking-wider text-slate-900">
-                  KELURAHAN {rtProfile.kelurahan} KECAMATAN {rtProfile.kecamatan}
+                <h2 className="text-base md:text-lg font-black uppercase tracking-wider text-slate-900 leading-tight">
+                  KETUA RT.{(rtProfile.rt_number || '25').replace(/^0+/, '')} / RW. {rtProfile.rw_number || 'IX'}
                 </h2>
-                <h3 className="text-sm md:text-base font-bold uppercase tracking-wide text-slate-900">
+                <h2 className="text-sm md:text-base font-black uppercase tracking-wider text-slate-900 leading-tight mt-0.5">
+                  KELURAHAN {(rtProfile.kelurahan || 'MENTAWA BARU HULU').toUpperCase()}
+                </h2>
+                <h3 className="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-900 leading-tight mt-0.5">
+                  KECAMATAN
+                </h3>
+                <h2 className="text-sm md:text-base font-black uppercase tracking-wider text-slate-900 leading-tight">
+                  {(rtProfile.kecamatan || 'MENTAWA BARU KETAPANG').toUpperCase()}
+                </h2>
+                <h3 className="text-xs md:text-sm font-bold uppercase tracking-wide text-slate-800 mt-1">
                   {rtProfile.kota_kabupaten} - PROVINSI {rtProfile.provinsi}
                 </h3>
                 <p className="text-[11px] leading-tight text-slate-700 mt-1">
@@ -127,7 +133,7 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
 
             {/* OPENING PARAGRAPH */}
             <p className="text-justify text-xs md:text-sm leading-relaxed mb-4 indent-8">
-              Yang bertanda tangan di bawah ini, Pengurus Rukun Tetangga (RT) {rtProfile.rt_number} Rukun Warga (RW) {rtProfile.rw_number}, Kelurahan {rtProfile.kelurahan}, Kecamatan {rtProfile.kecamatan}, {rtProfile.kota_kabupaten}, dengan ini menerangkan dengan sebenarnya bahwa:
+              Yang bertanda tangan di bawah ini, Ketua RT.{(rtProfile.rt_number || '25').replace(/^0+/, '')} / RW. {rtProfile.rw_number || 'IX'}, Kelurahan {rtProfile.kelurahan || 'Mentawa Baru Hulu'}, Kecamatan {rtProfile.kecamatan || 'Mentawa Baru Ketapang'}, {rtProfile.kota_kabupaten}, dengan ini menerangkan dengan sebenarnya bahwa:
             </p>
 
             {/* DATA WARGA / PEMOHON */}
@@ -360,7 +366,7 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
                   {rtProfile.kota_kabupaten}, {formatTanggalIndo(surat.tanggal_surat || new Date())}
                 </p>
                 <p className="font-semibold text-slate-900">
-                  Ketua Rukun Tetangga (RT) {rtProfile.rt_number}
+                  Ketua RT.{(rtProfile.rt_number || '25').replace(/^0+/, '')} / RW. {rtProfile.rw_number || 'IX'}
                 </p>
 
                 {/* Stempel Digital Overlay & TTD if present */}

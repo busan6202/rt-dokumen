@@ -119,10 +119,10 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
             Portal Layanan Surat Digital RT
           </span>
           <h1 className="text-xl md:text-2xl font-black">
-            RT {rtProfile?.rt_number} / RW {rtProfile?.rw_number}
+            RT.{rtProfile?.rt_number ? rtProfile.rt_number.replace(/^0+/, '') : '25'} / RW. {rtProfile?.rw_number || 'IX'}
           </h1>
           <p className="text-xs text-blue-100 mt-0.5">
-            Kelurahan {rtProfile?.kelurahan}, Kecamatan {rtProfile?.kecamatan}
+            Kelurahan {rtProfile?.kelurahan || 'Mentawa Baru Hulu'}, Kecamatan {rtProfile?.kecamatan || 'Mentawa Baru Ketapang'}
           </p>
         </div>
 

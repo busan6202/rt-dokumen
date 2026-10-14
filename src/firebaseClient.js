@@ -16,14 +16,14 @@ import {
 // Fallback Mock Data
 const DEFAULT_RT_PROFILE = {
   id: 'profile_main',
-  rt_number: '025',
+  rt_number: '25',
   rw_number: 'IX',
-  kelurahan: 'Mentawa Baru Hilir',
+  kelurahan: 'Mentawa Baru Hulu',
   kecamatan: 'Mentawa Baru Ketapang',
   kota_kabupaten: 'Kabupaten Kotawaringin Timur',
   provinsi: 'Kalimantan Tengah',
   kode_pos: '74322',
-  alamat_sekretariat: 'Sekretariat RT 025 / RW IX',
+  alamat_sekretariat: 'Sekretariat RT. 25 / RW. IX',
   kontak_telepon: '0812-5487-3133',
   email: 'rt005rw012@gmail.com',
   nama_ketua_rt: 'Bpk. H. Bambang Sudirman',
@@ -259,13 +259,35 @@ export const db = {
         const ref = doc(firestore, 'rt_profile', 'main')
         const snap = await getDoc(ref)
         if (snap.exists()) {
-          return snap.data()
+          const data = snap.data()
+          if (data.kelurahan === 'Mentawa Baru Hilir') {
+            data.kelurahan = 'Mentawa Baru Hulu'
+          }
+          if (data.rt_number === '025') {
+            data.rt_number = '25'
+          }
+          return data
         }
       } catch (e) {
         console.warn('Fallback to local profile:', e)
       }
     }
-    return getLocalData('RT_PROFILE', DEFAULT_RT_PROFILE)
+    const local = getLocalData('RT_PROFILE', DEFAULT_RT_PROFILE)
+    if (local) {
+      let changed = false
+      if (local.kelurahan === 'Mentawa Baru Hilir') {
+        local.kelurahan = 'Mentawa Baru Hulu'
+        changed = true
+      }
+      if (local.rt_number === '025') {
+        local.rt_number = '25'
+        changed = true
+      }
+      if (changed) {
+        setLocalData('RT_PROFILE', local)
+      }
+    }
+    return local
   },
 
   async updateProfile(updates) {
