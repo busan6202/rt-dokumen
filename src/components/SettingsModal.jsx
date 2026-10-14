@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import {
-  getSupabaseConfig,
-  saveSupabaseConfig,
+  getFirebaseConfig,
+  saveFirebaseConfig,
   db,
-  isSupabaseConfigured
-} from '../supabaseClient'
+  isFirebaseConfigured
+} from '../firebaseClient'
 import {
   Settings,
   Database,
@@ -16,16 +16,16 @@ import {
   ExternalLink,
   Code,
   ShieldCheck,
-  Image,
-  RefreshCw
+  RefreshCw,
+  Flame
 } from 'lucide-react'
 
 export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
-  const [activeTab, setActiveTab] = useState('rt') // 'rt' or 'supabase'
+  const [activeTab, setActiveTab] = useState('rt') // 'rt' or 'firebase'
   const [profileData, setProfileData] = useState({ ...rtProfile })
-  const supabaseInitial = getSupabaseConfig()
-  const [supabaseUrl, setSupabaseUrl] = useState(supabaseInitial.url)
-  const [supabaseKey, setSupabaseKey] = useState(supabaseInitial.anonKey)
+  const firebaseInitial = getFirebaseConfig()
+  const [fbConfig, setFbConfig] = useState({ ...firebaseInitial })
+  const [jsonConfigInput, setJsonConfigInput] = useState('')
   const [testResult, setTestResult] = useState(null)
   const [isTesting, setIsTesting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -44,18 +44,46 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
     }
   }
 
-  const handleTestSupabase = async () => {
+  // Parse pasted Firebase config string/JSON
+  const handleParseJsonConfig = () => {
+    try {
+      // Clean JS object format if user pasted const firebaseConfig = { ... }
+      let clean = jsonConfigInput.trim()
+      if (clean.includes('{')) {
+        clean = clean.substring(clean.indexOf('{'), clean.lastIndexOf('}') + 1)
+      }
+      // Replace unquoted keys with quoted keys for valid JSON
+      const jsonCompatible = clean.replace(/([a-zA-Z0-9_]+)\s*:/g, '"$1":')
+      const parsed = JSON.parse(jsonCompatible)
+
+      setFbConfig(prev => ({
+        ...prev,
+        apiKey: parsed.apiKey || prev.apiKey,
+        authDomain: parsed.authDomain || prev.authDomain,
+        projectId: parsed.projectId || prev.projectId,
+        storageBucket: parsed.storageBucket || prev.storageBucket,
+        messagingSenderId: parsed.messagingSenderId || prev.messagingSenderId,
+        appId: parsed.appId || prev.appId
+      }))
+      alert('Konfigurasi Firebase berhasil diurai dan dimasukkan ke formulir!')
+      setJsonConfigInput('')
+    } catch (err) {
+      alert('Format teks tidak valid. Silakan isi kolom satu per satu secara manual.')
+    }
+  }
+
+  const handleTestFirebase = async () => {
     setIsTesting(true)
     setTestResult(null)
-    saveSupabaseConfig(supabaseUrl, supabaseKey)
+    saveFirebaseConfig(fbConfig)
     const res = await db.testConnection()
     setTestResult(res)
     setIsTesting(false)
   }
 
-  const handleSaveSupabase = () => {
-    saveSupabaseConfig(supabaseUrl, supabaseKey)
-    alert('Konfigurasi Supabase disimpan! Halaman akan memuat ulang untuk menghubungkan klien.')
+  const handleSaveFirebase = () => {
+    saveFirebaseConfig(fbConfig)
+    alert('Konfigurasi Google Firebase disimpan! Halaman akan dimuat ulang.')
     window.location.reload()
   }
 
@@ -70,7 +98,7 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-base">Pengaturan Sistem Administrasi RT</h3>
-              <p className="text-xs text-slate-500">Konfigurasi Kop Surat, Profil Pengurus, dan Database Supabase</p>
+              <p className="text-xs text-slate-500">Konfigurasi Kop Surat, Profil Pengurus, dan Database Firebase</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-700 rounded-lg">
@@ -95,16 +123,16 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
 
           <button
             type="button"
-            onClick={() => setActiveTab('supabase')}
+            onClick={() => setActiveTab('firebase')}
             className={`py-3 px-4 text-xs font-bold border-b-2 transition flex items-center gap-2 ${
-              activeTab === 'supabase'
-                ? 'border-blue-600 text-blue-600'
+              activeTab === 'firebase'
+                ? 'border-amber-500 text-amber-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Database className="w-4 h-4" />
-            Database Supabase
-            {isSupabaseConfigured() ? (
+            <Flame className="w-4 h-4 text-amber-500" />
+            Database Google Firebase
+            {isFirebaseConfigured() ? (
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             ) : (
               <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 text-amber-700 rounded font-normal">
@@ -282,102 +310,157 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
             </form>
           )}
 
-          {/* TAB 2: SUPABASE CONFIG */}
-          {activeTab === 'supabase' && (
+          {/* TAB 2: FIREBASE CONFIG */}
+          {activeTab === 'firebase' && (
             <div className="space-y-6">
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2 mb-2">
-                  <Database className="w-4 h-4 text-emerald-600" />
-                  Status Koneksi Supabase
+              <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <h4 className="text-sm font-bold text-amber-900 flex items-center gap-2 mb-1">
+                  <Flame className="w-4 h-4 text-amber-600" />
+                  Google Firebase Firestore (100% Gratis Selamanya)
                 </h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Aplikasi ini berjalan dengan arsitektur <strong>Serverless</strong>. Data disimpan secara langsung ke database <strong>Supabase</strong> gratis Anda, atau tersimpan di LocalStorage jika belum terhubung.
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Firebase Spark Plan gratis selamanya tanpa batasan 2 proyek. Data surat, warga, dan OTP tersinkronisasi secara cloud dan aman.
                 </p>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Supabase Project URL
-                  </label>
+              {/* Quick Paste Box */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                <label className="block text-xs font-bold text-slate-700">
+                  Tempel Objek Config Firebase Sekali Klik (Opsi Cepat):
+                </label>
+                <div className="flex gap-2">
                   <input
-                    type="url"
-                    placeholder="https://xyzabcdefghijklmnop.supabase.co"
-                    value={supabaseUrl}
-                    onChange={e => setSupabaseUrl(e.target.value)}
-                    className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500"
+                    type="text"
+                    placeholder='Tempel { apiKey: "...", projectId: "..." } di sini...'
+                    value={jsonConfigInput}
+                    onChange={e => setJsonConfigInput(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-white rounded-lg border border-slate-300 font-mono"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Supabase Anon Public Key
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    value={supabaseKey}
-                    onChange={e => setSupabaseKey(e.target.value)}
-                    className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {testResult && (
-                  <div
-                    className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
-                      testResult.success
-                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                        : 'bg-rose-50 text-rose-800 border border-rose-200'
-                    }`}
-                  >
-                    {testResult.success ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    ) : (
-                      <XCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                    )}
-                    <span>{testResult.message}</span>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={handleTestSupabase}
-                    disabled={isTesting || !supabaseUrl || !supabaseKey}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition disabled:opacity-40"
+                    onClick={handleParseJsonConfig}
+                    disabled={!jsonConfigInput}
+                    className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-xs font-semibold text-slate-800 rounded-lg whitespace-nowrap disabled:opacity-50"
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isTesting ? 'animate-spin' : ''}`} />
-                    Uji Koneksi
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSaveSupabase}
-                    className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition"
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    Simpan & Terapkan Supabase
+                    Terapkan
                   </button>
                 </div>
               </div>
 
-              {/* Panduan 3 Langkah */}
+              {/* Form Input Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    API Key (apiKey) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="AIzaSy..."
+                    value={fbConfig.apiKey}
+                    onChange={e => setFbConfig({ ...fbConfig, apiKey: e.target.value.trim() })}
+                    className="w-full px-3 py-2 text-xs bg-white rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Project ID (projectId) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="rt-dokumen-12345"
+                    value={fbConfig.projectId}
+                    onChange={e => setFbConfig({ ...fbConfig, projectId: e.target.value.trim() })}
+                    className="w-full px-3 py-2 text-xs bg-white rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Auth Domain (authDomain)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="rt-dokumen.firebaseapp.com"
+                    value={fbConfig.authDomain}
+                    onChange={e => setFbConfig({ ...fbConfig, authDomain: e.target.value.trim() })}
+                    className="w-full px-3 py-2 text-xs bg-white rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    App ID (appId)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="1:123456789:web:abcdef..."
+                    value={fbConfig.appId}
+                    onChange={e => setFbConfig({ ...fbConfig, appId: e.target.value.trim() })}
+                    className="w-full px-3 py-2 text-xs bg-white rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {testResult && (
+                <div
+                  className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
+                    testResult.success
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      : 'bg-rose-50 text-rose-800 border border-rose-200'
+                  }`}
+                >
+                  {testResult.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                  )}
+                  <span>{testResult.message}</span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleTestFirebase}
+                  disabled={isTesting || !fbConfig.projectId || !fbConfig.apiKey}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition disabled:opacity-40"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isTesting ? 'animate-spin' : ''}`} />
+                  Uji Koneksi
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveFirebase}
+                  className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Simpan & Terapkan Firebase
+                </button>
+              </div>
+
+              {/* Panduan 3 Langkah Firebase */}
               <div className="border-t border-slate-200 pt-5 space-y-3">
                 <h5 className="text-xs font-bold uppercase text-slate-500 tracking-wider">
-                  Cara Setup Supabase Gratis (3 Menit):
+                  Cara Setup Firebase Firestore Gratis (2 Menit):
                 </h5>
                 <ol className="list-decimal list-inside text-xs text-slate-600 space-y-2">
                   <li>
-                    Daftar / Buat proyek baru gratis di{' '}
-                    <a href="https://supabase.com" target="_blank" rel="noreferrer" className="text-blue-600 underline font-semibold">
-                      supabase.com
-                    </a>.
+                    Buka{' '}
+                    <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="text-blue-600 underline font-semibold">
+                      console.firebase.google.com
+                    </a>{' '}
+                    dan login menggunakan akun Google Anda.
                   </li>
                   <li>
-                    Buka menu <strong>SQL Editor</strong> di dashboard Supabase, lalu salin dan jalankan skrip dari file <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-800">supabase/schema.sql</code> di proyek ini.
+                    Klik <strong>Add Project</strong> (beri nama misal <code>rt-dokumen</code>).
                   </li>
                   <li>
-                    Buka menu <strong>Project Settings &gt; API</strong>, salin <em>Project URL</em> dan <em>anon public key</em> ke formulir di atas. Selesai!
+                    Di panel kiri, buka <strong>Build &gt; Firestore Database</strong> &gt; klik <strong>Create Database</strong> &gt; pilih opsi <strong>Start in test mode</strong>.
+                  </li>
+                  <li>
+                    Buka <strong>Project Settings</strong> (ikon gerigi) &gt; scroll ke bawah dan klik ikon Web (<code>&lt;/&gt;</code>) untuk mendaftarkan web app. Salin <code>apiKey</code> dan <code>projectId</code> ke formulir di atas!
                   </li>
                 </ol>
               </div>
@@ -388,4 +471,3 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
     </div>
   )
 }
-

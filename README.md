@@ -70,21 +70,37 @@ Buka browser pada alamat `http://localhost:3000`.
 
 ---
 
-## ☁️ Panduan Setup Database Supabase (Gratis)
+## ☁️ Panduan Setup Database Google Firebase Firestore (100% Gratis Selamanya)
 
-1. Buat akun atau login di [supabase.com](https://supabase.com).
-2. Buat proyek baru (*New Project*). Beri nama misalnya `rt-surat-dokumen`.
-3. Buka menu **SQL Editor** pada panel kiri dashboard Supabase.
-4. Buka file [`supabase/schema.sql`](supabase/schema.sql) pada repositori ini, salin seluruh isinya, lalu tempelkan ke SQL Editor Supabase dan klik tombol **Run**.
-5. Buka menu **Project Settings > API**, lalu salin:
-   - **Project URL**
-   - **anon public API key**
-6. Hubungkan ke aplikasi dengan salah satu cara berikut:
-   - **Melalui Tampilan Web**: Buka menu **Pengaturan RT > Database Supabase** di aplikasi, masukkan URL dan Anon Key, klik *Uji Koneksi* lalu *Simpan & Terapkan*.
-   - **Melalui File Environment**: Buat file `.env` di direktori proyek:
+1. Buka [console.firebase.google.com](https://console.firebase.google.com) dan login menggunakan akun Google Anda.
+2. Klik tombol **Add Project** (atau **Tambahkan Proyek**). Beri nama proyek, misalnya `rt-dokumen`, lalu klik Lanjutkan (*Google Analytics opsional, boleh dimatikan*).
+3. Setelah proyek dibuat:
+   - Di menu sebelah kiri, buka **Build > Firestore Database**.
+   - Klik **Create Database** (Buat Database).
+   - Pada pilihan lokasi, pilih lokasi default (misal `asia-southeast2` Jakarta atau `asia-southeast1` Singapura).
+   - Pada aturan keamanan (*Security rules*), pilih **Start in test mode** (Mode uji), lalu klik **Create**.
+4. Daftarkan Web App untuk mendapatkan kredensial:
+   - Di halaman utama project, klik ikon **Web (`</>`)** di samping nama proyek Anda.
+   - Beri nama panggilan aplikasi (misal `Web RT`), lalu klik **Register app**.
+   - Anda akan melihat objek `firebaseConfig`, contoh:
+     ```javascript
+     const firebaseConfig = {
+       apiKey: "AIzaSy...",
+       authDomain: "rt-dokumen.firebaseapp.com",
+       projectId: "rt-dokumen",
+       storageBucket: "rt-dokumen.appspot.com",
+       messagingSenderId: "1234567890",
+       appId: "1:1234567890:web:abcdef..."
+     };
+     ```
+5. Hubungkan ke aplikasi web:
+   - **Cara Mudah**: Buka web app Anda > klik **Pengaturan RT > Database Google Firebase** > tempel kode di atas ke kolom yang tersedia lalu klik **Simpan & Terapkan Firebase**.
+   - **Atau melalui file `.env`**:
      ```env
-     VITE_SUPABASE_URL=https://proyek-anda.supabase.co
-     VITE_SUPABASE_ANON_KEY=eyJhbGciOi...
+     VITE_FIREBASE_API_KEY=AIzaSy...
+     VITE_FIREBASE_PROJECT_ID=rt-dokumen
+     VITE_FIREBASE_AUTH_DOMAIN=rt-dokumen.firebaseapp.com
+     VITE_FIREBASE_APP_ID=1:...
      ```
 
 ---
