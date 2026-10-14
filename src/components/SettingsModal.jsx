@@ -17,7 +17,11 @@ import {
   Code,
   ShieldCheck,
   RefreshCw,
-  Flame
+  Flame,
+  Upload,
+  Image as ImageIcon,
+  Trash2,
+  RotateCcw
 } from 'lucide-react'
 
 export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
@@ -29,6 +33,48 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
   const [testResult, setTestResult] = useState(null)
   const [isTesting, setIsTesting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Image Upload & Compression Helper (converts to lightweight Base64)
+  const handleImageUpload = (e, fieldName, maxDim = 400) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Mohon pilih file gambar (PNG, JPG, JPEG, WEBP).')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width)
+            width = maxDim
+          } else {
+            width = Math.round((width * maxDim) / height)
+            height = maxDim
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+
+        const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg'
+        const dataUrl = canvas.toDataURL(mime, 0.85)
+        setProfileData(prev => ({ ...prev, [fieldName]: dataUrl }))
+      }
+      img.src = event.target.result
+    }
+    reader.readAsDataURL(file)
+  }
 
   const handleSaveProfile = async (e) => {
     e.preventDefault()
@@ -47,12 +93,10 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
   // Parse pasted Firebase config string/JSON
   const handleParseJsonConfig = () => {
     try {
-      // Clean JS object format if user pasted const firebaseConfig = { ... }
       let clean = jsonConfigInput.trim()
       if (clean.includes('{')) {
         clean = clean.substring(clean.indexOf('{'), clean.lastIndexOf('}') + 1)
       }
-      // Replace unquoted keys with quoted keys for valid JSON
       const jsonCompatible = clean.replace(/([a-zA-Z0-9_]+)\s*:/g, '"$1":')
       const parsed = JSON.parse(jsonCompatible)
 
@@ -146,154 +190,324 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
         <div className="p-6 max-h-[75vh] overflow-y-auto">
           {/* TAB 1: PROFIL RT */}
           {activeTab === 'rt' && (
-            <form onSubmit={handleSaveProfile} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nomor RT</label>
-                  <input
-                    type="text"
-                    required
-                    value={profileData.rt_number}
-                    onChange={e => setProfileData({ ...profileData, rt_number: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+            <form onSubmit={handleSaveProfile} className="space-y-6">
+              {/* SECTION 1: PROFIL WILAYAH */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5 text-blue-600" />
+                  Identitas Wilayah RT / RW
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nomor RT</label>
+                    <input
+                      type="text"
+                      required
+                      value={profileData.rt_number}
+                      onChange={e => setProfileData({ ...profileData, rt_number: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nomor RW</label>
-                  <input
-                    type="text"
-                    required
-                    value={profileData.rw_number}
-                    onChange={e => setProfileData({ ...profileData, rw_number: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nomor RW</label>
+                    <input
+                      type="text"
+                      required
+                      value={profileData.rw_number}
+                      onChange={e => setProfileData({ ...profileData, rw_number: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Kode Pos</label>
-                  <input
-                    type="text"
-                    value={profileData.kode_pos || ''}
-                    onChange={e => setProfileData({ ...profileData, kode_pos: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Kode Pos</label>
+                    <input
+                      type="text"
+                      value={profileData.kode_pos || ''}
+                      onChange={e => setProfileData({ ...profileData, kode_pos: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Kelurahan / Desa</label>
-                  <input
-                    type="text"
-                    required
-                    value={profileData.kelurahan}
-                    onChange={e => setProfileData({ ...profileData, kelurahan: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Kelurahan / Desa</label>
+                    <input
+                      type="text"
+                      required
+                      value={profileData.kelurahan}
+                      onChange={e => setProfileData({ ...profileData, kelurahan: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Kecamatan</label>
-                  <input
-                    type="text"
-                    required
-                    value={profileData.kecamatan}
-                    onChange={e => setProfileData({ ...profileData, kecamatan: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Kecamatan</label>
+                    <input
+                      type="text"
+                      required
+                      value={profileData.kecamatan}
+                      onChange={e => setProfileData({ ...profileData, kecamatan: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Kota / Kabupaten</label>
-                  <input
-                    type="text"
-                    required
-                    value={profileData.kota_kabupaten}
-                    onChange={e => setProfileData({ ...profileData, kota_kabupaten: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Kota / Kabupaten</label>
+                    <input
+                      type="text"
+                      required
+                      value={profileData.kota_kabupaten}
+                      onChange={e => setProfileData({ ...profileData, kota_kabupaten: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Provinsi</label>
-                  <input
-                    type="text"
-                    required
-                    value={profileData.provinsi}
-                    onChange={e => setProfileData({ ...profileData, provinsi: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Provinsi</label>
+                    <input
+                      type="text"
+                      required
+                      value={profileData.provinsi}
+                      onChange={e => setProfileData({ ...profileData, provinsi: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Kontak Telepon / WA RT</label>
-                  <input
-                    type="text"
-                    value={profileData.kontak_telepon || ''}
-                    onChange={e => setProfileData({ ...profileData, kontak_telepon: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Kontak Telepon / WA RT</label>
+                    <input
+                      type="text"
+                      value={profileData.kontak_telepon || ''}
+                      onChange={e => setProfileData({ ...profileData, kontak_telepon: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-                <div className="sm:col-span-3">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Alamat Kantor / Sekretariat RT</label>
-                  <input
-                    type="text"
-                    value={profileData.alamat_sekretariat || ''}
-                    onChange={e => setProfileData({ ...profileData, alamat_sekretariat: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                  <div className="sm:col-span-3">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Alamat Kantor / Sekretariat RT</label>
+                    <input
+                      type="text"
+                      value={profileData.alamat_sekretariat || ''}
+                      onChange={e => setProfileData({ ...profileData, alamat_sekretariat: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap Ketua RT</label>
-                  <input
-                    type="text"
-                    required
-                    value={profileData.nama_ketua_rt}
-                    onChange={e => setProfileData({ ...profileData, nama_ketua_rt: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 uppercase"
-                  />
-                </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap Ketua RT</label>
+                    <input
+                      type="text"
+                      required
+                      value={profileData.nama_ketua_rt}
+                      onChange={e => setProfileData({ ...profileData, nama_ketua_rt: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 uppercase"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">NIK Ketua RT</label>
-                  <input
-                    type="text"
-                    value={profileData.nik_ketua_rt || ''}
-                    onChange={e => setProfileData({ ...profileData, nik_ketua_rt: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">NIK Ketua RT</label>
+                    <input
+                      type="text"
+                      value={profileData.nik_ketua_rt || ''}
+                      onChange={e => setProfileData({ ...profileData, nik_ketua_rt: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono"
+                    />
+                  </div>
 
-                <div className="sm:col-span-3">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    PIN Akses Pengurus RT (Admin PIN)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={profileData.admin_pin || '123456'}
-                    onChange={e => setProfileData({ ...profileData, admin_pin: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 font-mono font-bold text-blue-700 focus:ring-2 focus:ring-blue-500"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    PIN rahasia ini digunakan oleh Pengurus RT untuk mengakses data arsip, mengelola warga, dan menerbitkan kode OTP.
-                  </p>
-                </div>
+                  <div className="sm:col-span-3">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      PIN Akses Pengurus RT (Admin PIN)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={profileData.admin_pin || '123456'}
+                      onChange={e => setProfileData({ ...profileData, admin_pin: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 font-mono font-bold text-blue-700 focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      PIN rahasia ini digunakan oleh Pengurus RT untuk mengakses data arsip, mengelola warga, dan menerbitkan kode OTP.
+                    </p>
+                  </div>
 
-                <div className="sm:col-span-3">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Format Template Penomoran Surat
-                  </label>
-                  <input
-                    type="text"
-                    value={profileData.format_nomor_surat || ''}
-                    onChange={e => setProfileData({ ...profileData, format_nomor_surat: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Variabel tersedia: <code className="text-blue-600">{'{nomor}'}</code>, <code className="text-blue-600">{'{rt}'}</code>, <code className="text-blue-600">{'{rw}'}</code>, <code className="text-blue-600">{'{bulan_romawi}'}</code>, <code className="text-blue-600">{'{tahun}'}</code>
-                  </p>
+                  <div className="sm:col-span-3">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Format Template Penomoran Surat
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.format_nomor_surat || ''}
+                      onChange={e => setProfileData({ ...profileData, format_nomor_surat: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-slate-50 rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Variabel tersedia: <code className="text-blue-600">{'{nomor}'}</code>, <code className="text-blue-600">{'{rt}'}</code>, <code className="text-blue-600">{'{rw}'}</code>, <code className="text-blue-600">{'{bulan_romawi}'}</code>, <code className="text-blue-600">{'{tahun}'}</code>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: UPLOAD LOGO DAERAH, STEMPEL RT, DAN TANDA TANGAN */}
+              <div className="border-t border-slate-200 pt-5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1.5">
+                  <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
+                  Logo Daerah, Cap Stempel RT & Tanda Tangan Digital
+                </h4>
+                <p className="text-xs text-slate-400 mb-4">
+                  Unggah file gambar untuk ditampilkan pada kop surat dan tanda tangan dokumen resmi A4.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* 1. LOGO DAERAH / LOGO RT */}
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block mb-2">1. Logo Daerah / RT</span>
+                      <div className="h-24 bg-white rounded-lg border border-slate-200 flex items-center justify-center p-2 mb-3 overflow-hidden">
+                        {profileData.logo_url ? (
+                          <img
+                            src={profileData.logo_url}
+                            alt="Logo Daerah"
+                            className="max-h-20 max-w-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-center text-[10px] text-slate-400">
+                            <ImageIcon className="w-6 h-6 mx-auto mb-1 opacity-40" />
+                            Belum ada logo
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold cursor-pointer transition">
+                        <Upload className="w-3.5 h-3.5" />
+                        Unggah File Logo
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageUpload(e, 'logo_url', 400)}
+                        />
+                      </label>
+
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setProfileData(prev => ({ ...prev, logo_url: './logo-daerah.png' }))}
+                          className="flex-1 py-1 px-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-[10px] font-semibold transition"
+                          title="Gunakan Logo Daerah Habaring Hurung"
+                        >
+                          Logo Habaring Hurung
+                        </button>
+
+                        {profileData.logo_url && (
+                          <button
+                            type="button"
+                            onClick={() => setProfileData(prev => ({ ...prev, logo_url: '' }))}
+                            className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg transition"
+                            title="Hapus Logo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. CAP STEMPEL RT */}
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block mb-2">2. Cap Stempel RT</span>
+                      <div className="h-24 bg-white rounded-lg border border-slate-200 flex items-center justify-center p-2 mb-3 overflow-hidden relative">
+                        {profileData.stempel_url ? (
+                          <img
+                            src={profileData.stempel_url}
+                            alt="Stempel RT"
+                            className="max-h-20 max-w-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-center text-[10px] text-slate-400">
+                            <ImageIcon className="w-6 h-6 mx-auto mb-1 opacity-40" />
+                            Belum ada cap stempel
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold cursor-pointer transition">
+                        <Upload className="w-3.5 h-3.5" />
+                        Unggah Stempel RT
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageUpload(e, 'stempel_url', 300)}
+                        />
+                      </label>
+
+                      {profileData.stempel_url && (
+                        <button
+                          type="button"
+                          onClick={() => setProfileData(prev => ({ ...prev, stempel_url: '' }))}
+                          className="w-full py-1 px-2 text-rose-600 hover:bg-rose-50 rounded-lg text-[10px] font-semibold transition flex items-center justify-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" /> Hapus Stempel
+                        </button>
+                      )}
+                      <p className="text-[10px] text-slate-400 text-center">
+                        Gunakan format PNG transparan
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3. TANDA TANGAN KETUA RT */}
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block mb-2">3. Tanda Tangan Ketua RT</span>
+                      <div className="h-24 bg-white rounded-lg border border-slate-200 flex items-center justify-center p-2 mb-3 overflow-hidden">
+                        {profileData.ttd_digital_url ? (
+                          <img
+                            src={profileData.ttd_digital_url}
+                            alt="Tanda Tangan"
+                            className="max-h-20 max-w-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-center text-[10px] text-slate-400">
+                            <ImageIcon className="w-6 h-6 mx-auto mb-1 opacity-40" />
+                            Belum ada tanda tangan
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold cursor-pointer transition">
+                        <Upload className="w-3.5 h-3.5" />
+                        Unggah Tanda Tangan
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageUpload(e, 'ttd_digital_url', 300)}
+                        />
+                      </label>
+
+                      {profileData.ttd_digital_url && (
+                        <button
+                          type="button"
+                          onClick={() => setProfileData(prev => ({ ...prev, ttd_digital_url: '' }))}
+                          className="w-full py-1 px-2 text-rose-600 hover:bg-rose-50 rounded-lg text-[10px] font-semibold transition flex items-center justify-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" /> Hapus Tanda Tangan
+                        </button>
+                      )}
+                      <p className="text-[10px] text-slate-400 text-center">
+                        Kosongkan jika tanda tangan basah
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -304,7 +518,7 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
                   className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
-                  {isSaving ? 'Menyimpan...' : 'Simpan Profil RT'}
+                  {isSaving ? 'Menyimpan...' : 'Simpan Profil & Logo RT'}
                 </button>
               </div>
             </form>

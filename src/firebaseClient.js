@@ -32,7 +32,7 @@ const DEFAULT_RT_PROFILE = {
   nik_sekretaris: '3276015508820002',
   format_nomor_surat: '{nomor}/RT.{rt}/RW.{rw}/{bulan_romawi}/{tahun}',
   admin_pin: '123456',
-  logo_url: '',
+  logo_url: './logo-daerah.png',
   ttd_digital_url: '',
   stempel_url: ''
 }
@@ -593,3 +593,4 @@ export const db = {
     return nextNum
   }
 }
+

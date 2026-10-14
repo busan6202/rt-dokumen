@@ -75,10 +75,14 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
           {/* TOP SECTION: KOP SURAT */}
           <div>
             <div className="kop-surat flex items-center justify-between pb-3 border-b-4 border-black relative">
-              {/* Optional RT / RW Logo */}
+              {/* Logo Daerah / RT */}
               <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                {rtProfile.logo_url ? (
-                  <img src={rtProfile.logo_url} alt="Logo RT" className="max-h-20 max-w-20 object-contain" />
+                {rtProfile.logo_url || true ? (
+                  <img
+                    src={rtProfile.logo_url || './logo-daerah.png'}
+                    alt="Logo Daerah Habaring Hurung"
+                    className="max-h-20 max-w-20 object-contain"
+                  />
                 ) : (
                   <div className="w-16 h-16 rounded-full border-2 border-slate-700 flex flex-col items-center justify-center text-center p-1">
                     <span className="text-[10px] font-bold uppercase tracking-tighter">RUKUN</span>
@@ -361,13 +365,6 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
 
                 {/* Stempel Digital Overlay & TTD if present */}
                 <div className="h-20 flex items-center justify-center relative my-1">
-                  {rtProfile.stempel_url && (
-                    <img
-                      src={rtProfile.stempel_url}
-                      alt="Stempel RT"
-                      className="absolute opacity-80 max-h-20 max-w-24 object-contain pointer-events-none"
-                    />
-                  )}
                   {rtProfile.ttd_digital_url ? (
                     <img
                       src={rtProfile.ttd_digital_url}
@@ -375,7 +372,15 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
                       className="max-h-16 max-w-28 object-contain z-10"
                     />
                   ) : (
-                    <span className="text-slate-300 text-xs italic z-10">[ Tanda Tangan & Stempel ]</span>
+                    <span className="text-slate-300 text-xs italic z-10">[ Tanda Tangan ]</span>
+                  )}
+
+                  {rtProfile.stempel_url && (
+                    <img
+                      src={rtProfile.stempel_url}
+                      alt="Stempel RT"
+                      className="absolute left-1/2 -translate-x-[65%] -top-1 opacity-85 max-h-20 max-w-24 object-contain pointer-events-none z-20 mix-blend-multiply transform -rotate-6"
+                    />
                   )}
                 </div>
 
