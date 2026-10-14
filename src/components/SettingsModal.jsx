@@ -120,7 +120,7 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
     setIsTesting(true)
     setTestResult(null)
     saveFirebaseConfig(fbConfig)
-    const res = await db.testConnection()
+    const res = await db.testConnection(fbConfig)
     setTestResult(res)
     setIsTesting(false)
   }
@@ -618,18 +618,39 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
 
               {testResult && (
                 <div
-                  className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
+                  className={`p-3.5 rounded-xl text-xs space-y-1.5 ${
                     testResult.success
                       ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                       : 'bg-rose-50 text-rose-800 border border-rose-200'
                   }`}
                 >
-                  {testResult.success ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                  <div className="flex items-start gap-2 font-bold">
+                    {testResult.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                    )}
+                    <span>{testResult.success ? 'Koneksi Sukses!' : 'Uji Koneksi Gagal'}</span>
+                  </div>
+                  <p className="text-xs leading-relaxed pl-6">{testResult.message}</p>
+
+                  {!testResult.success && testResult.code === 'permission-denied' && (
+                    <div className="mt-2 ml-6 p-2.5 bg-white rounded-lg border border-rose-200 font-mono text-[11px] text-slate-800">
+                      <p className="font-sans font-bold text-slate-700 text-[10px] uppercase mb-1">
+                        Salin kode aturan ini ke tab Rules di Firebase:
+                      </p>
+                      <code>
+                        rules_version = '2';<br />
+                        service cloud.firestore &#123;<br />
+                        &nbsp;&nbsp;match /databases/&#123;database&#125;/documents &#123;<br />
+                        &nbsp;&nbsp;&nbsp;&nbsp;match /&#123;document=**&#125; &#123;<br />
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, write: if true;<br />
+                        &nbsp;&nbsp;&nbsp;&nbsp;&#125;<br />
+                        &nbsp;&nbsp;&#125;<br />
+                        &#125;
+                      </code>
+                    </div>
                   )}
-                  <span>{testResult.message}</span>
                 </div>
               )}
 

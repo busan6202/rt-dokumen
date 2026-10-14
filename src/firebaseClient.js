@@ -193,17 +193,61 @@ export const clearAuthSession = () => localStorage.removeItem('RT_AUTH_SESSION')
 // Unified Database Layer (Google Firebase Firestore with seamless LocalStorage fallback)
 export const db = {
   // Test Connection
-  async testConnection() {
-    const firestore = getFirestoreDb()
-    if (!firestore) {
-      return { success: false, message: 'Kredensial Firebase belum diisi atau tidak valid.' }
+  async testConnection(customConfig) {
+    const config = customConfig || getFirebaseConfig()
+    if (!config || !config.projectId || !config.apiKey) {
+      return {
+        success: false,
+        message: 'Kredensial Firebase belum lengkap. Mohon isi minimal Project ID dan API Key.'
+      }
     }
+
     try {
-      const testRef = doc(firestore, 'rt_profile', 'main')
+      // Inisialisasi isolated app sementara agar selalu menggunakan kredensial terbaru dari form
+      const tempAppName = 'test_conn_' + Date.now()
+      const testApp = initializeApp(config, tempAppName)
+      const testDb = getFirestore(testApp)
+
+      const testRef = doc(testDb, 'rt_profile', 'main')
       await getDoc(testRef)
-      return { success: true, message: 'Berhasil terhubung ke Google Firebase Firestore!' }
+
+      return {
+        success: true,
+        message: 'Berhasil terhubung ke Google Firebase Firestore! Database siap digunakan.'
+      }
     } catch (err) {
-      return { success: false, message: `Koneksi gagal: ${err.message}` }
+      console.error('Firebase test error:', err)
+      const msg = err.message || ''
+
+      if (err.code === 'permission-denied' || msg.includes('permission-denied') || msg.includes('insufficient permissions')) {
+        return {
+          success: false,
+          code: 'permission-denied',
+          message: 'Aturan Keamanan (Rules) Terkunci! Buka Firebase Console > Firestore Database > tab Rules > ubah menjadi allow read, write: if true; lalu klik Publish.'
+        }
+      }
+
+      if (err.code === 'not-found' || msg.includes('does not exist') || msg.includes('not-found')) {
+        return {
+          success: false,
+          code: 'not-found',
+          message: 'Database Firestore belum dibuat! Buka Firebase Console > menu "Firestore Database" > klik tombol "Create database".'
+        }
+      }
+
+      if (err.code === 'invalid-api-key' || msg.includes('API key') || msg.includes('invalid-api-key')) {
+        return {
+          success: false,
+          code: 'invalid-api-key',
+          message: 'API Key tidak valid! Periksa kembali apiKey yang disalin dari Project Settings Firebase Anda.'
+        }
+      }
+
+      return {
+        success: false,
+        code: err.code || 'unknown',
+        message: `Koneksi gagal (${err.code || 'error'}): ${msg}`
+      }
     }
   },
 
