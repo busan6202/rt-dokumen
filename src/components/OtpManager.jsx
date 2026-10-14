@@ -170,13 +170,30 @@ export default function OtpManager({ rtProfile, wargaList }) {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-500/20 transition whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4" />
-          Terbitkan Kode OTP Baru
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={async () => {
+              if (confirm('Bersihkan semua kode OTP yang sudah kadaluarsa atau sudah terpakai?')) {
+                await db.cleanExpiredOtps()
+                loadOtps()
+                alert('OTP kadaluarsa berhasil dibersihkan!')
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition whitespace-nowrap"
+            title="Hapus otomatis OTP yang kadaluarsa atau sudah dipakai"
+          >
+            <Trash2 className="w-4 h-4 text-slate-500" />
+            Bersihkan Kadaluarsa
+          </button>
+
+          <button
+            onClick={handleOpenAdd}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-500/20 transition whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" />
+            Terbitkan Manual
+          </button>
+        </div>
       </div>
 
       {/* OTP Table */}
@@ -218,7 +235,14 @@ export default function OtpManager({ rtProfile, wargaList }) {
 
                       {/* Penerima */}
                       <td className="px-5 py-3.5">
-                        <p className="font-bold text-slate-900 text-xs">{item.nama_penerima}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-bold text-slate-900 text-xs">{item.nama_penerima}</p>
+                          {item.catatan?.includes('Mandiri') && (
+                            <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.2 rounded font-semibold">
+                              Mandiri NIK
+                            </span>
+                          )}
+                        </div>
                         {item.no_hp && <p className="font-mono text-[11px] text-slate-500">{item.no_hp}</p>}
                         {item.nik_terkait && (
                           <p className="font-mono text-[10px] text-blue-600">NIK: {item.nik_terkait}</p>

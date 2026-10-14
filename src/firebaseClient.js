@@ -116,32 +116,8 @@ const DEFAULT_WARGA = [
   }
 ]
 
-const DEFAULT_OTPS = [
-  {
-    id: 'otp_demo_1',
-    otp_code: '888999',
-    nama_penerima: 'Warga Umum RT 005',
-    no_hp: '',
-    nik_terkait: null,
-    role: 'warga',
-    status: 'active',
-    max_uses: 0,
-    used_count: 0,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'otp_demo_2',
-    otp_code: '123456',
-    nama_penerima: 'Ahmad Faisal Pratama',
-    no_hp: '081298765432',
-    nik_terkait: '3276011505920003',
-    role: 'warga',
-    status: 'active',
-    max_uses: 0,
-    used_count: 0,
-    created_at: new Date().toISOString()
-  }
-]
+const DEFAULT_OTPS = []
+
 
 // Get Firebase configuration from LocalStorage or Vite Env
 export const getFirebaseConfig = () => {
@@ -424,6 +400,85 @@ export const db = {
     const filtered = all.filter(o => o.id !== id)
     setLocalData('RT_OTP_LIST', filtered)
     return true
+  },
+
+  // Permohonan OTP Dinamis Otomatis oleh Warga berdasarkan NIK
+  async requestDynamicOtp({ nik, no_hp, nama }) {
+    const cleanNik = (nik || '').trim()
+    const cleanHp = (no_hp || '').trim()
+
+    if (!cleanNik || cleanNik.length < 16) {
+      return { success: false, message: 'Harap masukkan 16 digit NIK sesuai KTP.' }
+    }
+
+    // Periksa apakah NIK warga terdaftar di Buku Induk RT
+    const wargaList = await this.getWarga()
+    const foundWarga = wargaList.find(w => w.nik === cleanNik)
+
+    let recipientName = foundWarga ? foundWarga.nama_lengkap : (nama || '').trim()
+    let recipientPhone = cleanHp || (foundWarga ? foundWarga.no_hp : '')
+
+    if (!foundWarga) {
+      return {
+        success: false,
+        notRegistered: true,
+        message: 'NIK Anda belum terdaftar di Buku Induk Kependudukan RT setempat. Demi keamanan data warga, silakan hubungi Pengurus RT untuk didaftarkan.'
+      }
+    }
+
+    // Generate kode unik acak 6 digit
+    const generatedCode = Math.floor(100000 + Math.random() * 900000).toString()
+
+    // Masa berlaku: 30 menit (Single-Use sekali pakai)
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString()
+
+    const newRecord = await this.createOTP({
+      otp_code: generatedCode,
+      nama_penerima: recipientName,
+      no_hp: recipientPhone,
+      nik_terkait: cleanNik,
+      role: 'warga',
+      status: 'active',
+      max_uses: 1, // Sekali pakai
+      expires_at: expiresAt,
+      catatan: 'Permohonan OTP Mandiri oleh Warga'
+    })
+
+    return {
+      success: true,
+      otp_code: generatedCode,
+      nama: recipientName,
+      nik: cleanNik,
+      expires_at: expiresAt,
+      expires_minutes: 30,
+      message: 'Kode OTP berhasil dibuat dan aktif selama 30 menit.'
+    }
+  },
+
+  // Bersihkan OTP yang sudah kadaluarsa atau sudah terpakai
+  async cleanExpiredOtps() {
+    const firestore = getFirestoreDb()
+    const all = await this.getOTPList()
+    const now = new Date()
+
+    const validOtps = []
+    for (const item of all) {
+      const isExpired = item.expires_at && new Date(item.expires_at) < now
+      const isUsed = item.status === 'used' || item.status === 'revoked'
+      if (isExpired || isUsed) {
+        if (firestore) {
+          try {
+            await deleteDoc(doc(firestore, 'rt_access_otp', item.id))
+          } catch (e) {
+            console.error('Clean expired OTP error:', e)
+          }
+        }
+      } else {
+        validOtps.push(item)
+      }
+    }
+    setLocalData('RT_OTP_LIST', validOtps)
+    return validOtps
   },
 
   // Warga CRUD
