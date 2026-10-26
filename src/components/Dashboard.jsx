@@ -13,7 +13,11 @@ import {
   CreditCard,
   Home,
   HeartOff,
-  Briefcase
+  Briefcase,
+  Sparkles,
+  Building2,
+  Clock,
+  ChevronRight
 } from 'lucide-react'
 import { JENIS_SURAT_CONFIG, formatTanggalIndo } from '../utils/helpers'
 import { isSupabaseConfigured } from '../supabaseClient'
@@ -38,72 +42,89 @@ export default function Dashboard({
     return d.getMonth() + 1 === currentMonth && d.getFullYear() === currentYear
   }).length
 
-  const recentSurat = suratList.slice(0, 5)
+  const recentSurat = suratList.slice(0, 6)
 
   return (
-    <div className="space-y-8">
-      {/* Hero Welcome Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-blue-700/15">
-        <div className="relative z-10 max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/15 backdrop-blur-xs rounded-full text-xs font-semibold tracking-wide text-blue-100 mb-3">
-            <Building className="w-3.5 h-3.5" />
-            Rukun Tetangga {rtProfile?.rt_number} / Rukun Warga {rtProfile?.rw_number}
-          </span>
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight">
-            Sistem Layanan Surat Digital RT
+    <div className="space-y-8 animate-in fade-in duration-300">
+      {/* Hero Welcome Banner - Dark Civic Luxe */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#131c2e] via-[#0f172a] to-[#0b101d] border border-white/10 p-6 sm:p-8 md:p-10 shadow-2xl">
+        {/* Subtle Ambient Radial Lighting */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 max-w-3xl">
+          {/* Official RT / RW Emblem Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-md mb-4 text-xs font-semibold text-slate-300 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <Building2 className="w-3.5 h-3.5 text-amber-400" />
+            <span className="font-mono tracking-wide text-amber-300">
+              RUKUN TETANGGA {rtProfile?.rt_number || '00'} / RW {rtProfile?.rw_number || '00'}
+            </span>
+            <span className="text-slate-600">•</span>
+            <span className="text-slate-300 hidden sm:inline">Kel. {rtProfile?.kelurahan}</span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight">
+            Sistem Administrasi <span className="bg-gradient-to-r from-amber-300 via-amber-400 to-amber-200 bg-clip-text text-transparent">Surat Digital RT</span>
           </h1>
-          <p className="text-sm text-blue-100 mt-2 leading-relaxed">
-            Kelurahan {rtProfile?.kelurahan}, Kecamatan {rtProfile?.kecamatan}, {rtProfile?.kota_kabupaten}. Terbitkan surat pengantar resmi, domisili, kematian, dan SKU dalam hitungan detik.
+
+          <p className="text-sm md:text-base text-slate-400 mt-2.5 max-w-2xl leading-relaxed">
+            Portal terpadu penerbitan surat pengantar resmi, surat keterangan kependudukan, buku induk warga, serta verifikasi QR code anti-pemalsuan.
           </p>
 
-          <div className="flex flex-wrap items-center gap-3 mt-6">
+          <div className="flex flex-wrap items-center gap-3.5 mt-7">
             <button
               onClick={onNewSurat}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-blue-700 font-bold rounded-xl text-xs shadow-md shadow-blue-900/20 hover:bg-blue-50 transition transform active:scale-95"
+              className="inline-flex items-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all duration-200 active:scale-95"
             >
-              <PlusCircle className="w-4 h-4 text-blue-600" />
+              <PlusCircle className="w-4 h-4 text-slate-950" />
               Buat Surat Pengantar Baru
             </button>
 
             <button
               onClick={onOpenArsip}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl text-xs backdrop-blur-xs transition"
+              className="inline-flex items-center gap-2 px-4.5 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-slate-200 font-semibold text-xs border border-white/10 backdrop-blur-md transition-all duration-200"
             >
-              <FileText className="w-4 h-4" />
-              Lihat Buku Arsip
+              <FileText className="w-4 h-4 text-amber-400" />
+              Buku Arsip Registrasi ({suratList.length})
+            </button>
+
+            <button
+              onClick={onOpenWarga}
+              className="inline-flex items-center gap-2 px-4.5 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-slate-200 font-semibold text-xs border border-white/10 backdrop-blur-md transition-all duration-200"
+            >
+              <Users className="w-4 h-4 text-emerald-400" />
+              Buku Warga ({wargaList.length})
             </button>
           </div>
         </div>
-
-        {/* Decorative background shapes */}
-        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Civic Instrument Style */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Surat */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="relative overflow-hidden bg-[#131c2e] p-5 rounded-2xl border border-white/[0.08] shadow-lg flex items-center justify-between group hover:border-amber-400/40 transition">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Surat Terbit</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">{suratList.length}</h3>
-            <span className="text-[11px] text-emerald-600 font-semibold inline-flex items-center gap-1 mt-1">
-              <TrendingUp className="w-3 h-3" />
-              Terdokumentasi
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest font-mono">Total Surat Terbit</p>
+            <h3 className="text-3xl font-extrabold text-white mt-1 font-mono tracking-tight">{suratList.length}</h3>
+            <span className="text-[11px] text-amber-400/90 font-medium inline-flex items-center gap-1 mt-1">
+              <TrendingUp className="w-3 h-3 text-amber-400" />
+              Terdokumentasi Resmi
             </span>
           </div>
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+          <div className="w-12 h-12 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center">
             <FileText className="w-6 h-6" />
           </div>
         </div>
 
         {/* Surat Bulan Ini */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="relative overflow-hidden bg-[#131c2e] p-5 rounded-2xl border border-white/[0.08] shadow-lg flex items-center justify-between group hover:border-amber-400/40 transition">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Bulan Ini</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">{suratBulanIni}</h3>
-            <span className="text-[11px] text-slate-400 mt-1 block">Periode berjalan</span>
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest font-mono">Periode Bulan Ini</p>
+            <h3 className="text-3xl font-extrabold text-white mt-1 font-mono tracking-tight">{suratBulanIni}</h3>
+            <span className="text-[11px] text-slate-400 font-mono mt-1 block">Tahun {currentYear}</span>
           </div>
-          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
             <Calendar className="w-6 h-6" />
           </div>
         </div>
@@ -111,45 +132,42 @@ export default function Dashboard({
         {/* Total Warga */}
         <div
           onClick={onOpenWarga}
-          className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:border-blue-300 transition"
+          className="relative overflow-hidden bg-[#131c2e] p-5 rounded-2xl border border-white/[0.08] shadow-lg flex items-center justify-between cursor-pointer hover:border-emerald-400/40 transition group"
         >
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Warga Terdaftar</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">{wargaList.length}</h3>
-            <span className="text-[11px] text-blue-600 font-semibold inline-flex items-center gap-0.5 mt-1">
-              Buku Induk <ArrowRight className="w-3 h-3" />
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest font-mono">Buku Induk Warga</p>
+            <h3 className="text-3xl font-extrabold text-white mt-1 font-mono tracking-tight">{wargaList.length}</h3>
+            <span className="text-[11px] text-emerald-400 font-semibold inline-flex items-center gap-1 mt-1">
+              Kelola Data <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition" />
             </span>
           </div>
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
             <Users className="w-6 h-6" />
           </div>
         </div>
 
-        {/* Database Supabase Status */}
+        {/* Database Status */}
         <div
           onClick={onOpenSettings}
-          className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:border-blue-300 transition"
+          className="relative overflow-hidden bg-[#131c2e] p-5 rounded-2xl border border-white/[0.08] shadow-lg flex items-center justify-between cursor-pointer hover:border-amber-400/40 transition group"
         >
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Database Cloud</p>
-            <h3 className="text-sm font-bold text-slate-900 mt-1 flex items-center gap-1.5">
-              {isConnected ? (
-                <>
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                  Supabase Aktif
-                </>
-              ) : (
-                <>
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                  Mode Demo / Lokal
-                </>
-              )}
-            </h3>
-            <span className="text-[11px] text-blue-600 font-semibold inline-flex items-center gap-0.5 mt-1">
-              Atur Koneksi <ArrowRight className="w-3 h-3" />
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest font-mono">Sinkronisasi Cloud</p>
+            <div className="mt-1 flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+              <h3 className="text-sm font-bold text-white font-mono">
+                {isConnected ? 'Supabase Aktif' : 'Mode Offline/Lokal'}
+              </h3>
+            </div>
+            <span className="text-[11px] text-amber-300 font-semibold inline-flex items-center gap-1 mt-1">
+              Pengaturan Database <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition" />
             </span>
           </div>
-          <div className={`p-3 rounded-xl ${isConnected ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${
+            isConnected
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+          }`}>
             <Database className="w-6 h-6" />
           </div>
         </div>
@@ -158,74 +176,90 @@ export default function Dashboard({
       {/* Quick Launch Jenis Surat */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-900">Format Surat Siap Cetak</h3>
-          <span className="text-xs text-slate-400">Pilih template untuk pembuatan langsung</span>
+          <div>
+            <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              Template Surat Resmi Siap Terbit
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">Pilih format surat dinas sesuai permohonan warga</p>
+          </div>
+          <button
+            onClick={onNewSurat}
+            className="text-xs font-semibold text-amber-400 hover:text-amber-300 transition hidden sm:inline-flex items-center gap-1"
+          >
+            Formulir Lengkap <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {JENIS_SURAT_CONFIG.slice(0, 4).map(cfg => (
             <div
               key={cfg.id}
               onClick={onNewSurat}
-              className="bg-white p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-md transition cursor-pointer flex flex-col justify-between group"
+              className="bg-[#131c2e] p-4.5 rounded-2xl border border-white/[0.08] hover:border-amber-400/50 hover:bg-[#16233a] transition-all duration-200 cursor-pointer flex flex-col justify-between group shadow-sm"
             >
               <div>
-                <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">{cfg.kode}</span>
-                <h4 className="text-sm font-bold text-slate-900 mt-1 group-hover:text-blue-600 transition">
+                <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-md bg-amber-400/10 text-amber-300 border border-amber-400/20">
+                  {cfg.kode}
+                </span>
+                <h4 className="text-sm font-bold text-white mt-2.5 group-hover:text-amber-300 transition">
                   {cfg.nama}
                 </h4>
-                <p className="text-xs text-slate-500 mt-1 line-clamp-2">{cfg.deskripsi}</p>
+                <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">{cfg.deskripsi}</p>
               </div>
-              <div className="mt-4 flex items-center text-xs font-semibold text-blue-600 gap-1">
-                Buat Surat <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
+              <div className="mt-4 pt-3 border-t border-white/[0.05] flex items-center text-xs font-semibold text-amber-400 gap-1">
+                Buka Formulir <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Recent Letters Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+      {/* Recent Letters Table - Administrative Ledger */}
+      <div className="bg-[#131c2e] rounded-2xl border border-white/[0.08] shadow-xl overflow-hidden">
+        <div className="p-5 border-b border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Arsip Surat Terakhir</h3>
-            <p className="text-xs text-slate-500">Daftar surat yang baru diterbitkan</p>
+            <h3 className="text-base font-bold text-white tracking-tight">Buku Register Surat Terakhir</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Catatan arsip dokumen yang baru saja diterbitkan</p>
           </div>
           <button
             onClick={onOpenArsip}
-            className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+            className="text-xs font-bold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 transition"
           >
-            Lihat Semua Arsip <ArrowRight className="w-3.5 h-3.5" />
+            Lihat Semua Arsip ({suratList.length}) <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {recentSurat.length === 0 ? (
-          <div className="p-8 text-center text-slate-400 text-xs">
-            Belum ada surat yang diterbitkan. Klik tombol "Buat Surat Pengantar Baru" di atas untuk memulai.
+          <div className="p-10 text-center text-slate-400 text-xs">
+            <FileText className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+            Belum ada surat yang diterbitkan. Klik tombol <span className="text-amber-400 font-semibold">"Buat Surat Pengantar Baru"</span> untuk membuat surat perdana.
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-white/[0.06]">
             {recentSurat.map(s => (
               <div
                 key={s.id}
-                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/70 transition"
+                className="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/[0.03] transition"
               >
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-slate-900">{s.nomor_surat}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                      {s.nomor_surat}
+                    </span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-200 font-semibold border border-white/10">
                       {s.judul_surat}
                     </span>
                   </div>
-                  <p className="text-xs font-medium text-slate-700 mt-1">
-                    Warga: <span className="font-semibold text-slate-900">{s.pemohon_nama}</span> • {formatTanggalIndo(s.tanggal_surat)}
+                  <p className="text-xs font-medium text-slate-200 mt-1.5">
+                    Pemohon: <span className="font-bold text-white">{s.pemohon_nama}</span> • <span className="text-slate-400">{formatTanggalIndo(s.tanggal_surat)}</span>
                   </p>
-                  <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Keperluan: {s.keperluan}</p>
+                  <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">Keperluan: {s.keperluan}</p>
                 </div>
 
                 <button
                   onClick={() => onSelectSurat(s)}
-                  className="self-end sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 rounded-lg transition"
+                  className="self-end sm:self-center inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-200 hover:text-slate-950 bg-white/[0.08] hover:bg-amber-400 rounded-lg border border-white/10 transition-all duration-150"
                 >
                   <Printer className="w-3.5 h-3.5" />
                   Pratinjau / Cetak
@@ -238,22 +272,3 @@ export default function Dashboard({
     </div>
   )
 }
-
-function Building(props) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect width="16" height="20" x="4" y="2" rx="2" ry="2"/>
-      <path d="M9 22v-4h6v4"/>
-      <path d="M8 6h.01"/>
-      <path d="M16 6h.01"/>
-      <path d="M12 6h.01"/>
-      <path d="M12 10h.01"/>
-      <path d="M12 14h.01"/>
-      <path d="M16 10h.01"/>
-      <path d="M16 14h.01"/>
-      <path d="M8 10h.01"/>
-      <path d="M8 14h.01"/>
-    </svg>
-  )
-}
-

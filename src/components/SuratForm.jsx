@@ -21,7 +21,9 @@ import {
   ArrowRight,
   RefreshCw,
   PlusCircle,
-  FileCheck2
+  FileCheck2,
+  Calendar,
+  Hash
 } from 'lucide-react'
 
 // Icon mapping
@@ -61,8 +63,8 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
     pekerjaan: '',
     kewarganegaraan: 'WNI',
     alamat: '',
-    rt: rtProfile.rt_number || '005',
-    rw: rtProfile.rw_number || '012',
+    rt: rtProfile.rt_number || '00',
+    rw: rtProfile.rw_number || '00',
     no_hp: '',
     email: ''
   })
@@ -168,11 +170,9 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
       email: w.email || ''
     })
 
-    // If death certificate, default applicant reporter to family
     if (selectedJenis === 'kematian') {
       setKhusus(prev => ({ ...prev, nama_pelapor: '' }))
     }
-    // If business, default business address to resident address
     if (selectedJenis === 'usaha') {
       setKhusus(prev => ({ ...prev, alamat_usaha: w.alamat || '' }))
     }
@@ -212,7 +212,6 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
     setIsSubmitting(true)
 
     try {
-      // Save resident to database if marked as new or not found
       if (isNewWarga && pemohon.nik) {
         await db.saveWarga({
           ...pemohon,
@@ -264,16 +263,16 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
   const activeConfig = JENIS_SURAT_CONFIG.find(j => j.id === selectedJenis)
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-5xl mx-auto pb-12">
+    <form onSubmit={handleSubmit} className="space-y-7 max-w-5xl mx-auto pb-12 animate-in fade-in duration-200">
       {/* 1. PILIH JENIS SURAT */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+      <div className="bg-[#131c2e] p-6 sm:p-7 rounded-2xl border border-white/[0.08] shadow-xl">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 flex items-center justify-center font-mono font-bold text-sm">
             1
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Pilih Jenis Surat RT</h3>
-            <p className="text-xs text-slate-500">Pilih format surat keterangan atau pengantar yang ingin diterbitkan</p>
+            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">Pilih Klasifikasi Dokumen RT</h3>
+            <p className="text-xs text-slate-400">Pilih format surat keterangan atau pengantar resmi yang akan diterbitkan</p>
           </div>
         </div>
 
@@ -287,20 +286,24 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
                 key={cfg.id}
                 type="button"
                 onClick={() => handleJenisChange(cfg.id)}
-                className={`flex flex-col text-left p-4 rounded-xl border-2 transition-all ${
+                className={`flex flex-col text-left p-4 rounded-xl border transition-all ${
                   isSelected
-                    ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-sm'
-                    : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/50'
+                    ? 'border-amber-400 bg-amber-400/10 shadow-lg shadow-amber-500/10 ring-1 ring-amber-400/30'
+                    : 'border-white/[0.08] hover:border-white/20 bg-[#0c1322] hover:bg-[#10192b]'
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <div className={`p-2 rounded-lg ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                    <IconComponent className="w-5 h-5" />
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className={`p-2 rounded-lg ${isSelected ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-white/[0.06] text-slate-300'}`}>
+                    <IconComponent className="w-4 h-4" />
                   </div>
-                  {isSelected && <CheckCircle2 className="w-5 h-5 text-blue-600" />}
+                  {isSelected && (
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                      TERPILIH
+                    </span>
+                  )}
                 </div>
-                <h4 className="font-semibold text-sm text-slate-900 leading-snug">{cfg.nama}</h4>
-                <p className="text-xs text-slate-500 mt-1 line-clamp-2">{cfg.deskripsi}</p>
+                <h4 className="font-bold text-sm text-white leading-snug">{cfg.nama}</h4>
+                <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">{cfg.deskripsi}</p>
               </button>
             )
           })}
@@ -308,15 +311,15 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
       </div>
 
       {/* 2. DATA PEMOHON / WARGA */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+      <div className="bg-[#131c2e] p-6 sm:p-7 rounded-2xl border border-white/[0.08] shadow-xl">
+        <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 flex items-center justify-center font-mono font-bold text-sm">
               2
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Data Warga / Pemohon</h3>
-              <p className="text-xs text-slate-500">Pilih warga dari database atau masukkan data warga baru</p>
+              <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">Identitas Pemohon / Warga</h3>
+              <p className="text-xs text-slate-400">Pilih warga dari Buku Induk atau input data warga baru</p>
             </div>
           </div>
 
@@ -327,11 +330,11 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
                 setIsNewWarga(false)
                 if (wargaList.length > 0) handleSelectWarga(wargaList[0])
               }}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
-                !isNewWarga ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl transition ${
+                !isNewWarga ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.1] border border-white/10'
               }`}
             >
-              Pilih dari Database ({wargaList.length})
+              Pilih dari Buku Warga ({wargaList.length})
             </button>
             <button
               type="button"
@@ -350,14 +353,14 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
                   pekerjaan: '',
                   kewarganegaraan: 'WNI',
                   alamat: '',
-                  rt: rtProfile.rt_number || '005',
-                  rw: rtProfile.rw_number || '012',
+                  rt: rtProfile.rt_number || '00',
+                  rw: rtProfile.rw_number || '00',
                   no_hp: '',
                   email: ''
                 })
               }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
-                isNewWarga ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition ${
+                isNewWarga ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.1] border border-white/10'
               }`}
             >
               <PlusCircle className="w-3.5 h-3.5" /> Input Warga Baru
@@ -367,19 +370,19 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
 
         {/* Existing Warga Picker */}
         {!isNewWarga && (
-          <div className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+          <div className="mb-6 p-4 bg-[#0c1322] rounded-xl border border-white/[0.08]">
             <div className="relative mb-3">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
                 type="text"
-                placeholder="Cari berdasarkan nama atau NIK warga..."
+                placeholder="Ketik nama atau NIK warga untuk mencari..."
                 value={wargaSearch}
                 onChange={e => setWargaSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-9 pr-4 py-2 text-xs bg-[#131c2e] text-white placeholder-slate-500 rounded-lg border border-white/10 focus:outline-none focus:border-amber-400"
               />
             </div>
 
-            <div className="max-h-48 overflow-y-auto divide-y divide-slate-200 bg-white rounded-lg border border-slate-200">
+            <div className="max-h-48 overflow-y-auto divide-y divide-white/[0.06] bg-[#131c2e] rounded-lg border border-white/[0.08]">
               {filteredWarga.length === 0 ? (
                 <div className="p-4 text-center text-xs text-slate-400">
                   Tidak ada warga ditemukan dengan kata kunci tersebut.
@@ -390,21 +393,21 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
                     key={w.id}
                     onClick={() => handleSelectWarga(w)}
                     className={`p-3 flex items-center justify-between cursor-pointer transition ${
-                      selectedWargaId === w.id ? 'bg-blue-50/80 font-medium' : 'hover:bg-slate-50'
+                      selectedWargaId === w.id ? 'bg-amber-400/10 border-l-2 border-amber-400 font-medium' : 'hover:bg-white/[0.03]'
                     }`}
                   >
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">{w.nama_lengkap}</p>
-                      <p className="text-xs text-slate-500">
-                        NIK: <span className="font-mono">{w.nik}</span> • {w.pekerjaan || 'Warga'} • {w.alamat}
+                      <p className="text-xs font-bold text-white">{w.nama_lengkap}</p>
+                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                        NIK: <span className="text-amber-300">{w.nik}</span> • {w.pekerjaan || 'Warga'} • {w.alamat}
                       </p>
                     </div>
                     {selectedWargaId === w.id ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Terpilih
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-mono font-bold text-amber-300 bg-amber-400/20 border border-amber-400/30 rounded-full">
+                        <CheckCircle2 className="w-3 h-3 text-amber-400" /> TERPILIH
                       </span>
                     ) : (
-                      <span className="text-xs text-slate-400">Pilih</span>
+                      <span className="text-xs text-slate-500 hover:text-slate-300">Pilih</span>
                     )}
                   </div>
                 ))
@@ -416,8 +419,8 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
         {/* Pemohon Form Inputs */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Nomor Induk Kependudukan (NIK) <span className="text-rose-500">*</span>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Nomor Induk Kependudukan (NIK) <span className="text-rose-400">*</span>
             </label>
             <input
               type="text"
@@ -426,12 +429,12 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
               value={pemohon.nik}
               onChange={e => setPemohon({ ...pemohon, nik: e.target.value.replace(/\D/g, '') })}
               placeholder="Contoh: 3276011505920003"
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 font-mono focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
               Nomor Kartu Keluarga (No. KK)
             </label>
             <input
@@ -440,13 +443,13 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
               value={pemohon.no_kk}
               onChange={e => setPemohon({ ...pemohon, no_kk: e.target.value.replace(/\D/g, '') })}
               placeholder="Contoh: 3276010101180001"
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 font-mono focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Nama Lengkap <span className="text-rose-500">*</span>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Nama Lengkap Pemohon <span className="text-rose-400">*</span>
             </label>
             <input
               type="text"
@@ -454,18 +457,18 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
               value={pemohon.nama_lengkap}
               onChange={e => setPemohon({ ...pemohon, nama_lengkap: e.target.value })}
               placeholder="Nama sesuai KTP"
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none uppercase"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400 uppercase font-semibold"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Jenis Kelamin <span className="text-rose-500">*</span>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Jenis Kelamin <span className="text-rose-400">*</span>
             </label>
             <select
               value={pemohon.jenis_kelamin}
               onChange={e => setPemohon({ ...pemohon, jenis_kelamin: e.target.value })}
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 focus:outline-none"
             >
               <option value="Laki-laki">Laki-laki</option>
               <option value="Perempuan">Perempuan</option>
@@ -473,7 +476,7 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
               Tempat Lahir
             </label>
             <input
@@ -481,30 +484,30 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
               value={pemohon.tempat_lahir}
               onChange={e => setPemohon({ ...pemohon, tempat_lahir: e.target.value })}
               placeholder="Contoh: Jakarta"
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
               Tanggal Lahir
             </label>
             <input
               type="date"
               value={pemohon.tanggal_lahir}
               onChange={e => setPemohon({ ...pemohon, tanggal_lahir: e.target.value })}
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 focus:outline-none font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
               Agama
             </label>
             <select
               value={pemohon.agama}
               onChange={e => setPemohon({ ...pemohon, agama: e.target.value })}
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 focus:outline-none"
             >
               <option value="Islam">Islam</option>
               <option value="Kristen Protestan">Kristen Protestan</option>
@@ -516,13 +519,13 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
               Status Perkawinan
             </label>
             <select
               value={pemohon.status_perkawinan}
               onChange={e => setPemohon({ ...pemohon, status_perkawinan: e.target.value })}
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 focus:outline-none"
             >
               <option value="Kawin">Kawin</option>
               <option value="Belum Kawin">Belum Kawin</option>
@@ -532,7 +535,7 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
               Pekerjaan
             </label>
             <input
@@ -540,12 +543,12 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
               value={pemohon.pekerjaan}
               onChange={e => setPemohon({ ...pemohon, pekerjaan: e.target.value })}
               placeholder="Contoh: Karyawan Swasta / Wiraswasta"
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
               Nomor WhatsApp / HP
             </label>
             <input
@@ -553,13 +556,13 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
               value={pemohon.no_hp}
               onChange={e => setPemohon({ ...pemohon, no_hp: e.target.value })}
               placeholder="Contoh: 081298765432"
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 focus:outline-none font-mono"
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Alamat Lengkap Tempat Tinggal <span className="text-rose-500">*</span>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Alamat Lengkap Domisili / Tempat Tinggal <span className="text-rose-400">*</span>
             </label>
             <textarea
               rows={2}
@@ -567,85 +570,85 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
               value={pemohon.alamat}
               onChange={e => setPemohon({ ...pemohon, alamat: e.target.value })}
               placeholder="Contoh: Jl. Cempaka Indah No. 10 Blok B"
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 focus:outline-none"
             />
           </div>
         </div>
       </div>
 
       {/* 3. RINCIAN SPESIFIK BERDASARKAN JENIS SURAT */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+      <div className="bg-[#131c2e] p-6 sm:p-7 rounded-2xl border border-white/[0.08] shadow-xl">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 flex items-center justify-center font-mono font-bold text-sm">
             3
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Rincian Surat ({activeConfig?.nama})</h3>
-            <p className="text-xs text-slate-500">Isi data khusus dan tujuan pembuatan surat</p>
+            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">Rincian Dokumen Khusus ({activeConfig?.nama})</h3>
+            <p className="text-xs text-slate-400">Parameter khusus dan rincian perihal surat</p>
           </div>
         </div>
 
         {/* Khusus Kematian */}
         {selectedJenis === 'kematian' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4 bg-rose-50/60 rounded-xl border border-rose-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4.5 bg-rose-500/10 rounded-xl border border-rose-500/25">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Hari & Tanggal Meninggal</label>
+              <label className="block text-xs font-semibold text-rose-300 mb-1">Hari & Tanggal Meninggal</label>
               <input
                 type="text"
                 value={khusus.hari_tanggal_kematian}
                 onChange={e => setKhusus({ ...khusus, hari_tanggal_kematian: e.target.value })}
                 placeholder="Contoh: Senin, 14 Oktober 2026"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Pukul / Jam Meninggal</label>
+              <label className="block text-xs font-semibold text-rose-300 mb-1">Pukul / Jam Meninggal</label>
               <input
                 type="text"
                 value={khusus.jam_kematian}
                 onChange={e => setKhusus({ ...khusus, jam_kematian: e.target.value })}
                 placeholder="Contoh: 08:30 WIB"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400 font-mono"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Tempat Meninggal</label>
+              <label className="block text-xs font-semibold text-rose-300 mb-1">Tempat Meninggal</label>
               <input
                 type="text"
                 value={khusus.tempat_kematian}
                 onChange={e => setKhusus({ ...khusus, tempat_kematian: e.target.value })}
                 placeholder="Contoh: RSUD Depok / Rumah Duka"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Penyebab Kematian</label>
+              <label className="block text-xs font-semibold text-rose-300 mb-1">Penyebab Kematian</label>
               <input
                 type="text"
                 value={khusus.penyebab_kematian}
                 onChange={e => setKhusus({ ...khusus, penyebab_kematian: e.target.value })}
                 placeholder="Contoh: Sakit biasa / Usia Lanjut"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Pelapor / Ahli Waris</label>
+              <label className="block text-xs font-semibold text-rose-300 mb-1">Nama Pelapor / Ahli Waris</label>
               <input
                 type="text"
                 value={khusus.nama_pelapor}
                 onChange={e => setKhusus({ ...khusus, nama_pelapor: e.target.value })}
                 placeholder="Nama pihak keluarga yang melapor"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Hubungan Pelapor</label>
+              <label className="block text-xs font-semibold text-rose-300 mb-1">Hubungan Pelapor</label>
               <input
                 type="text"
                 value={khusus.hubungan_pelapor}
                 onChange={e => setKhusus({ ...khusus, hubungan_pelapor: e.target.value })}
                 placeholder="Contoh: Anak Kandung / Istri / Suami"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400"
               />
             </div>
           </div>
@@ -653,45 +656,45 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
 
         {/* Khusus Usaha (SKU) */}
         {selectedJenis === 'usaha' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4 bg-amber-50/60 rounded-xl border border-amber-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4.5 bg-amber-500/10 rounded-xl border border-amber-500/25">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Toko / Usaha</label>
+              <label className="block text-xs font-semibold text-amber-300 mb-1">Nama Toko / Usaha</label>
               <input
                 type="text"
                 value={khusus.nama_usaha}
                 onChange={e => setKhusus({ ...khusus, nama_usaha: e.target.value })}
                 placeholder="Contoh: Warung Berkah Sembako"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400 font-semibold"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Bidang / Jenis Usaha</label>
+              <label className="block text-xs font-semibold text-amber-300 mb-1">Bidang / Jenis Usaha</label>
               <input
                 type="text"
                 value={khusus.jenis_usaha}
                 onChange={e => setKhusus({ ...khusus, jenis_usaha: e.target.value })}
                 placeholder="Contoh: Perdagangan Bahan Pokok / Kuliner"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Alamat Tempat Usaha</label>
+              <label className="block text-xs font-semibold text-amber-300 mb-1">Alamat Tempat Usaha</label>
               <input
                 type="text"
                 value={khusus.alamat_usaha}
                 onChange={e => setKhusus({ ...khusus, alamat_usaha: e.target.value })}
                 placeholder="Lokasi tempat berjualan / workshop"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Berjalan Sejak Tahun</label>
+              <label className="block text-xs font-semibold text-amber-300 mb-1">Berjalan Sejak Tahun</label>
               <input
                 type="number"
                 value={khusus.tahun_berdiri}
                 onChange={e => setKhusus({ ...khusus, tahun_berdiri: e.target.value })}
                 placeholder="Contoh: 2021"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400 font-mono"
               />
             </div>
           </div>
@@ -699,12 +702,12 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
 
         {/* Khusus Pengantar KTP */}
         {selectedJenis === 'pengantar_ktp' && (
-          <div className="mb-4 p-4 bg-indigo-50/60 rounded-xl border border-indigo-200">
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Jenis Permohonan Dokumen KTP / KK</label>
+          <div className="mb-4 p-4.5 bg-blue-500/10 rounded-xl border border-blue-500/25">
+            <label className="block text-xs font-semibold text-blue-300 mb-1">Jenis Permohonan Dokumen KTP / KK</label>
             <select
               value={khusus.jenis_ktp}
               onChange={e => setKhusus({ ...khusus, jenis_ktp: e.target.value })}
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400"
             >
               <option value="Pembuatan KTP Baru (Pemula Usia 17 Tahun)">Pembuatan KTP Baru (Pemula Usia 17 Tahun)</option>
               <option value="Penggantian KTP Rusak">Penggantian KTP Rusak</option>
@@ -717,35 +720,35 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
 
         {/* Khusus Pindah */}
         {selectedJenis === 'pindah' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4 bg-cyan-50/60 rounded-xl border border-cyan-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4.5 bg-cyan-500/10 rounded-xl border border-cyan-500/25">
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Alamat Tujuan Pindah</label>
+              <label className="block text-xs font-semibold text-cyan-300 mb-1">Alamat Tujuan Pindah</label>
               <input
                 type="text"
                 value={khusus.alamat_tujuan}
                 onChange={e => setKhusus({ ...khusus, alamat_tujuan: e.target.value })}
                 placeholder="Contoh: Jl. Gatot Subroto No. 88"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Kelurahan / Desa Tujuan</label>
+              <label className="block text-xs font-semibold text-cyan-300 mb-1">Kelurahan / Desa Tujuan</label>
               <input
                 type="text"
                 value={khusus.kelurahan_tujuan}
                 onChange={e => setKhusus({ ...khusus, kelurahan_tujuan: e.target.value })}
                 placeholder="Kelurahan tujuan"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Kecamatan & Kota Tujuan</label>
+              <label className="block text-xs font-semibold text-cyan-300 mb-1">Kecamatan & Kota Tujuan</label>
               <input
                 type="text"
                 value={khusus.kota_tujuan}
                 onChange={e => setKhusus({ ...khusus, kota_tujuan: e.target.value })}
                 placeholder="Kecamatan, Kota/Kabupaten"
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 text-xs bg-[#0c1322] text-white rounded-lg border border-white/10 focus:border-amber-400"
               />
             </div>
           </div>
@@ -753,8 +756,8 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
 
         {/* Keperluan Surat */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
-            Keperluan Pembuatan Surat <span className="text-rose-500">*</span>
+          <label className="block text-xs font-semibold text-slate-300 mb-1">
+            Keperluan Pembuatan Surat <span className="text-rose-400">*</span>
           </label>
           <textarea
             rows={2}
@@ -762,42 +765,42 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
             value={keperluan}
             onChange={e => setKeperluan(e.target.value)}
             placeholder="Tuliskan keperluan surat secara jelas..."
-            className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 focus:outline-none"
           />
           <p className="text-[11px] text-slate-400 mt-1">
-            Teks ini akan dicetak tebal pada bagian inti surat pengantar.
+            Teks ini akan dicetak tebal pada bagian inti surat pengantar resmi.
           </p>
         </div>
       </div>
 
       {/* 4. PENOMORAN & TANGGAL SURAT */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+      <div className="bg-[#131c2e] p-6 sm:p-7 rounded-2xl border border-white/[0.08] shadow-xl">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 flex items-center justify-center font-mono font-bold text-sm">
             4
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Penomoran & Tanggal Surat</h3>
-            <p className="text-xs text-slate-500">Nomor surat otomatis digenerate sesuai format resmi RT</p>
+            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">Penomoran Dokumen & Tanggal Terbit</h3>
+            <p className="text-xs text-slate-400">Nomor surat digenerate otomatis berdasarkan format buku administrasi RT</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Tanggal Surat Diterbitkan
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Tanggal Diterbitkan
             </label>
             <input
               type="date"
               value={tanggalSurat}
               onChange={e => setTanggalSurat(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Nomor Urut Buku Register
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Nomor Urut Register
             </label>
             <div className="flex gap-2">
               <input
@@ -817,13 +820,13 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
                     )
                   )
                 }}
-                className="w-full px-3.5 py-2 text-sm bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 font-mono font-bold"
               />
               <button
                 type="button"
                 onClick={handleRegenerateNomor}
                 title="Refresh nomor surat"
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition"
+                className="px-3 py-2 bg-white/[0.05] hover:bg-white/[0.1] text-amber-300 rounded-xl border border-white/10 transition"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -831,27 +834,27 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Format Nomor Surat Lengkap
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Nomor Surat Lengkap Otomatis
             </label>
             <input
               type="text"
               required
               value={nomorSurat}
               onChange={e => setNomorSurat(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 rounded-lg border border-slate-300 font-mono font-medium text-slate-800"
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] rounded-xl border border-amber-400/30 font-mono font-bold text-amber-300 shadow-inner"
             />
           </div>
         </div>
       </div>
 
       {/* SUBMIT BUTTONS */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+      <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/[0.08]">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+            className="px-5 py-2.5 text-xs font-semibold text-slate-400 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] rounded-xl border border-white/10 transition"
           >
             Batal
           </button>
@@ -860,17 +863,17 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-500/25 transition disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-6 py-3 text-xs font-extrabold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-xl shadow-lg shadow-amber-500/20 transition active:scale-95 disabled:opacity-50"
         >
           {isSubmitting ? (
             <>
               <RefreshCw className="w-4 h-4 animate-spin" />
-              Menyimpan Surat...
+              Menyimpan Arsip Dokumen...
             </>
           ) : (
             <>
               <FileCheck2 className="w-4 h-4" />
-              Terbitkan & Pratinjau Surat
+              Terbitkan Dokumen & Pratinjau
               <ArrowRight className="w-4 h-4" />
             </>
           )}
@@ -879,4 +882,3 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
     </form>
   )
 }
-

@@ -521,6 +521,134 @@ export const db = {
     }
   },
 
+  // Helper to mask email for security display
+  maskEmail(email) {
+    if (!email || !email.includes('@')) return '***@***.com';
+    const [user, domain] = email.split('@');
+    const visibleLen = Math.min(2, user.length);
+    const maskedUser = user.substring(0, visibleLen) + '***';
+    return `${maskedUser}@${domain}`;
+  },
+
+  // 1. Request PIN Reset via Registered Admin Email
+  async requestPinReset(inputEmail) {
+    const cleanEmail = (inputEmail || '').trim().toLowerCase();
+    if (!cleanEmail) {
+      return { success: false, message: 'Silakan masukkan alamat email terdaftar.' };
+    }
+
+    const profile = await this.getProfile();
+    const registeredEmail = (profile.email || 'rt005rw012@gmail.com').trim().toLowerCase();
+
+    if (cleanEmail !== registeredEmail) {
+      return {
+        success: false,
+        message: 'Alamat email tidak cocok dengan email resmi Pengurus RT yang terdaftar.'
+      };
+    }
+
+    // Generate 6-digit verification code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
+
+    const tokenRecord = {
+      code: resetCode,
+      email: registeredEmail,
+      expires_at: expiresAt,
+      created_at: new Date().toISOString()
+    };
+
+    const firestore = getFirestoreDb();
+    if (firestore) {
+      try {
+        await setDoc(doc(firestore, 'rt_security', 'pin_reset'), tokenRecord);
+      } catch (e) {
+        console.warn('Firestore PIN reset token save fallback:', e);
+      }
+    }
+    setLocalData('RT_PIN_RESET_TOKEN', tokenRecord);
+
+    return {
+      success: true,
+      email: registeredEmail,
+      maskedEmail: this.maskEmail(registeredEmail),
+      resetCode: resetCode,
+      expiresAt: expiresAt,
+      message: `Kode verifikasi 6 digit telah diterbitkan untuk ${this.maskEmail(registeredEmail)}.`
+    };
+  },
+
+  // 2. Verify PIN Reset Code
+  async verifyPinReset(inputCode) {
+    const cleanCode = (inputCode || '').trim();
+    if (!cleanCode || cleanCode.length < 6) {
+      return { success: false, message: 'Kode verifikasi harus 6 digit angka.' };
+    }
+
+    const firestore = getFirestoreDb();
+    let tokenRecord = null;
+
+    if (firestore) {
+      try {
+        const snap = await getDoc(doc(firestore, 'rt_security', 'pin_reset'));
+        if (snap.exists()) {
+          tokenRecord = snap.data();
+        }
+      } catch (e) {
+        console.warn('Firestore PIN reset lookup fallback:', e);
+      }
+    }
+
+    if (!tokenRecord) {
+      tokenRecord = getLocalData('RT_PIN_RESET_TOKEN', null);
+    }
+
+    if (!tokenRecord || !tokenRecord.code) {
+      return { success: false, message: 'Tidak ada permohonan reset PIN yang aktif. Silakan ajukan kode baru.' };
+    }
+
+    if (new Date(tokenRecord.expires_at) < new Date()) {
+      return { success: false, message: 'Kode verifikasi telah kadaluarsa (melebihi 15 menit). Silakan minta kode baru.' };
+    }
+
+    if (tokenRecord.code !== cleanCode) {
+      return { success: false, message: 'Kode verifikasi yang Anda masukkan tidak sesuai.' };
+    }
+
+    return { success: true, message: 'Kode verifikasi valid.' };
+  },
+
+  // 3. Confirm & Reset Admin PIN
+  async confirmPinReset(verificationCode, newPin) {
+    const verifyRes = await this.verifyPinReset(verificationCode);
+    if (!verifyRes.success) {
+      return verifyRes;
+    }
+
+    const cleanPin = (newPin || '').trim();
+    if (!cleanPin || cleanPin.length < 4) {
+      return { success: false, message: 'PIN baru minimal harus 4 digit/karakter.' };
+    }
+
+    await this.updateProfile({ admin_pin: cleanPin });
+
+    const firestore = getFirestoreDb();
+    if (firestore) {
+      try {
+        await deleteDoc(doc(firestore, 'rt_security', 'pin_reset'));
+      } catch (e) {
+        console.error('Failed to clear pin reset token in Firestore:', e);
+      }
+    }
+    setLocalData('RT_PIN_RESET_TOKEN', null);
+
+    return {
+      success: true,
+      newPin: cleanPin,
+      message: 'PIN Pengurus RT berhasil diperbarui! Silakan masuk dengan PIN baru Anda.'
+    };
+  },
+
   // Bersihkan OTP yang sudah kadaluarsa atau sudah terpakai
   async cleanExpiredOtps() {
     const firestore = getFirestoreDb()

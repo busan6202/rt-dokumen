@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { formatTanggalIndo, generateQRCodeDataUrl } from '../utils/helpers'
-import { ShieldCheck, Printer, ArrowLeft, Download, CheckCircle, Copy } from 'lucide-react'
+import { ShieldCheck, Printer, ArrowLeft, Download, CheckCircle, Copy, FileText, Check } from 'lucide-react'
 
 export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
   const [qrDataUrl, setQrDataUrl] = useState('')
@@ -26,38 +26,40 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
   const khusus = surat.data_khusus || {}
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-200">
       {/* Action Toolbar (Hidden during print) */}
-      <div className="no-print bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div className="no-print bg-[#131c2e] p-4.5 rounded-2xl border border-white/[0.08] shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           {onBack && (
             <button
               onClick={onBack}
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-300 bg-white/[0.05] hover:bg-white/[0.1] rounded-xl border border-white/10 transition"
             >
               <ArrowLeft className="w-4 h-4" />
               Kembali
             </button>
           )}
           <div>
-            <h2 className="text-base font-semibold text-slate-900">{surat.judul_surat}</h2>
-            <p className="text-xs text-slate-500">No: {surat.nomor_surat} • {pemohon.nama_lengkap}</p>
+            <h2 className="text-sm font-bold text-white tracking-tight">{surat.judul_surat}</h2>
+            <p className="text-xs text-slate-400 font-mono">
+              <span className="text-amber-300">{surat.nomor_surat}</span> • {pemohon.nama_lengkap}
+            </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2.5">
           <button
             onClick={copyVerifyLink}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold text-slate-300 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 rounded-xl transition"
             title="Salin tautan verifikasi online"
           >
-            {copiedLink ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-            {copiedLink ? 'Tersalin!' : 'Salin Link Verifikasi'}
+            {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+            {copiedLink ? 'Tersalin!' : 'Salin Tautan Verifikasi'}
           </button>
 
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-500/20 transition"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-extrabold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-xl shadow-lg shadow-amber-500/20 transition active:scale-95"
           >
             <Printer className="w-4 h-4" />
             Cetak / Simpan PDF (A4)
@@ -69,7 +71,7 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
       <div className="print-container flex justify-center py-4">
         <div
           id="printable-document"
-          className="paper-sheet bg-white w-full max-w-[210mm] min-h-[297mm] p-8 md:p-14 shadow-lg border border-slate-200 rounded-lg font-formal text-black relative flex flex-col justify-between"
+          className="paper-sheet bg-white w-full max-w-[210mm] min-h-[297mm] p-8 md:p-14 shadow-2xl rounded-sm font-formal text-black relative flex flex-col justify-between"
           style={{ boxSizing: 'border-box' }}
         >
           {/* TOP SECTION: KOP SURAT */}
@@ -332,7 +334,7 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
           {/* BOTTOM SECTION: TANDA TANGAN & STEMPEL & QR CODE */}
           <div className="ttd-section mt-8 pt-4">
             <div className="grid grid-cols-3 gap-2 items-end">
-              {/* Kolom 1: Pemohon (jika ada) */}
+              {/* Kolom 1: Pemohon */}
               <div className="text-center text-xs md:text-sm">
                 <p className="text-slate-800">Mengetahui / Pemohon,</p>
                 <div className="h-20 flex items-center justify-center">
@@ -406,4 +408,3 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
     </div>
   )
 }
-
