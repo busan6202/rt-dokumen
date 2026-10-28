@@ -23,7 +23,9 @@ import {
   PlusCircle,
   FileCheck2,
   Calendar,
-  Hash
+  Hash,
+  ShieldCheck,
+  Lock
 } from 'lucide-react'
 
 // Icon mapping
@@ -38,6 +40,7 @@ const ICONS = {
 }
 
 export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCancel, currentSession }) {
+  const isPengurus = currentSession?.role === 'pengurus'
   const [selectedJenis, setSelectedJenis] = useState(JENIS_SURAT_CONFIG[0].id)
   const [selectedWargaId, setSelectedWargaId] = useState('')
   const [wargaSearch, setWargaSearch] = useState('')
@@ -319,57 +322,91 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">Identitas Pemohon / Warga</h3>
-              <p className="text-xs text-slate-400">Pilih warga dari Buku Induk atau input data warga baru</p>
+              <p className="text-xs text-slate-400">
+                {isPengurus
+                  ? 'Pilih warga dari Buku Induk atau input data warga baru'
+                  : 'Identitas resmi sesuai akun warga yang meminta surat'}
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setIsNewWarga(false)
-                if (wargaList.length > 0) handleSelectWarga(wargaList[0])
-              }}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl transition ${
-                !isNewWarga ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.1] border border-white/10'
-              }`}
-            >
-              Pilih dari Buku Warga ({wargaList.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsNewWarga(true)
-                setSelectedWargaId('')
-                setPemohon({
-                  nik: '',
-                  no_kk: '',
-                  nama_lengkap: '',
-                  jenis_kelamin: 'Laki-laki',
-                  tempat_lahir: '',
-                  tanggal_lahir: '',
-                  agama: 'Islam',
-                  status_perkawinan: 'Kawin',
-                  pekerjaan: '',
-                  kewarganegaraan: 'WNI',
-                  alamat: '',
-                  rt: rtProfile.rt_number || '00',
-                  rw: rtProfile.rw_number || '00',
-                  no_hp: '',
-                  email: ''
-                })
-              }}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition ${
-                isNewWarga ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.1] border border-white/10'
-              }`}
-            >
-              <PlusCircle className="w-3.5 h-3.5" /> Input Warga Baru
-            </button>
-          </div>
+          {/* Opsi Buku Warga & Input Warga Baru hanya untuk Pengurus RT */}
+          {isPengurus && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNewWarga(false)
+                  if (wargaList.length > 0) handleSelectWarga(wargaList[0])
+                }}
+                className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl transition ${
+                  !isNewWarga ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.1] border border-white/10'
+                }`}
+              >
+                Pilih dari Buku Warga ({wargaList.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNewWarga(true)
+                  setSelectedWargaId('')
+                  setPemohon({
+                    nik: '',
+                    no_kk: '',
+                    nama_lengkap: '',
+                    jenis_kelamin: 'Laki-laki',
+                    tempat_lahir: '',
+                    tanggal_lahir: '',
+                    agama: 'Islam',
+                    status_perkawinan: 'Kawin',
+                    pekerjaan: '',
+                    kewarganegaraan: 'WNI',
+                    alamat: '',
+                    rt: rtProfile.rt_number || '00',
+                    rw: rtProfile.rw_number || '00',
+                    no_hp: '',
+                    email: ''
+                  })
+                }}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition ${
+                  isNewWarga ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.1] border border-white/10'
+                }`}
+              >
+                <PlusCircle className="w-3.5 h-3.5" /> Input Warga Baru
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Existing Warga Picker */}
-        {!isNewWarga && (
+        {/* Banner Pemohon Warga Terverifikasi (Khusus saat Warga yang login) */}
+        {!isPengurus && (
+          <div className="mb-6 p-4 sm:p-5 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/30 rounded-2xl flex items-center justify-between flex-wrap gap-4 shadow-sm">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-bold shadow-md shadow-emerald-500/10">
+                <UserCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-1">
+                  <ShieldCheck className="w-3 h-3" /> IDENTITAS RESMI WARGA PEMOHON
+                </div>
+                <h4 className="text-sm sm:text-base font-extrabold text-white tracking-tight leading-snug">
+                  {pemohon.nama_lengkap || currentSession?.nama || 'Warga Terdaftar'}
+                </h4>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  NIK: <span className="text-amber-300 font-semibold">{pemohon.nik || currentSession?.nik || '-'}</span>
+                  {pemohon.no_kk && <span> • No. KK: {pemohon.no_kk}</span>}
+                </p>
+              </div>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0c1322] border border-white/10 rounded-xl text-xs text-slate-300 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              Warga Resmi RT {rtProfile.rt_number} / RW {rtProfile.rw_number}
+            </div>
+          </div>
+        )}
+
+        {/* Existing Warga Picker (Hanya untuk Pengurus RT) */}
+        {isPengurus && !isNewWarga && (
           <div className="mb-6 p-4 bg-[#0c1322] rounded-xl border border-white/[0.08]">
             <div className="relative mb-3">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -419,17 +456,29 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
         {/* Pemohon Form Inputs */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Nomor Induk Kependudukan (NIK) <span className="text-rose-400">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-slate-300">
+                Nomor Induk Kependudukan (NIK) <span className="text-rose-400">*</span>
+              </label>
+              {!isPengurus && (
+                <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> Terkunci (Sesuai ID Login)
+                </span>
+              )}
+            </div>
             <input
               type="text"
               required
               maxLength={16}
+              readOnly={!isPengurus}
               value={pemohon.nik}
-              onChange={e => setPemohon({ ...pemohon, nik: e.target.value.replace(/\D/g, '') })}
+              onChange={e => isPengurus && setPemohon({ ...pemohon, nik: e.target.value.replace(/\D/g, '') })}
               placeholder="Contoh: 3276011505920003"
-              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 font-mono focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+              className={`w-full px-3.5 py-2.5 text-xs rounded-xl border font-mono transition ${
+                !isPengurus
+                  ? 'bg-[#090d16] text-amber-300 border-white/10 cursor-not-allowed select-none'
+                  : 'bg-[#0c1322] text-white border-white/10 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400'
+              }`}
             />
           </div>
 
@@ -448,16 +497,28 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Nama Lengkap Pemohon <span className="text-rose-400">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-slate-300">
+                Nama Lengkap Pemohon <span className="text-rose-400">*</span>
+              </label>
+              {!isPengurus && (
+                <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> Terkunci (Sesuai ID Login)
+                </span>
+              )}
+            </div>
             <input
               type="text"
               required
+              readOnly={!isPengurus}
               value={pemohon.nama_lengkap}
-              onChange={e => setPemohon({ ...pemohon, nama_lengkap: e.target.value })}
+              onChange={e => isPengurus && setPemohon({ ...pemohon, nama_lengkap: e.target.value })}
               placeholder="Nama sesuai KTP"
-              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400 uppercase font-semibold"
+              className={`w-full px-3.5 py-2.5 text-xs rounded-xl border font-semibold uppercase transition ${
+                !isPengurus
+                  ? 'bg-[#090d16] text-white border-white/10 cursor-not-allowed select-none'
+                  : 'bg-[#0c1322] text-white border-white/10 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400'
+              }`}
             />
           </div>
 
