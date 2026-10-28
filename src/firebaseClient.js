@@ -310,7 +310,7 @@ export const db = {
 
   // Auth & OTP Access
   async verifyCode(code) {
-    const cleanCode = (code || '').trim()
+    const cleanCode = String(code || '').trim().toUpperCase()
     if (!cleanCode) {
       return { success: false, message: 'Kode tidak boleh kosong.' }
     }
@@ -318,7 +318,7 @@ export const db = {
     const profile = await this.getProfile()
 
     // 1. Check Admin PIN
-    const adminPin = profile.admin_pin || '123456'
+    const adminPin = String(profile.admin_pin || '123456').trim()
     if (cleanCode === adminPin) {
       const adminSession = {
         role: 'pengurus',
@@ -330,25 +330,37 @@ export const db = {
       return { success: true, role: 'pengurus', session: adminSession }
     }
 
-    // 2. Check in Firestore OTP collection
-    const firestore = getFirestoreDb()
-    let otpRecord = null
+    // 2. Check in LocalStorage first (instant match, guaranteed reliable on the current browser/device)
+    const localOtps = getLocalData('RT_OTP_LIST', DEFAULT_OTPS)
+    let otpRecord = localOtps.find(o => String(o.otp_code || '').trim().toUpperCase() === cleanCode)
 
-    if (firestore) {
+    // 3. If not found in LocalStorage, check in Firestore
+    const firestore = getFirestoreDb()
+    if (!otpRecord && firestore) {
       try {
-        const q = query(collection(firestore, 'rt_access_otp'), where('otp_code', '==', cleanCode))
-        const snap = await getDocs(q)
-        if (!snap.empty) {
-          otpRecord = snap.docs[0].data()
+        // Direct document lookup by OTP code (fastest O(1), no query index needed)
+        const directSnap = await getDoc(doc(firestore, 'rt_access_otp_code', cleanCode))
+        if (directSnap.exists()) {
+          otpRecord = directSnap.data()
+        } else {
+          // Fallback query across rt_access_otp collection
+          const q = query(collection(firestore, 'rt_access_otp'), where('otp_code', '==', cleanCode))
+          const snap = await getDocs(q)
+          if (!snap.empty) {
+            otpRecord = snap.docs[0].data()
+          }
         }
       } catch (e) {
         console.warn('Firestore OTP lookup error:', e)
       }
     }
 
-    if (!otpRecord) {
-      const localOtps = getLocalData('RT_OTP_LIST', DEFAULT_OTPS)
-      otpRecord = localOtps.find(o => o.otp_code === cleanCode)
+    // Cache to LocalStorage if retrieved from Firestore
+    if (otpRecord) {
+      const currentLocals = getLocalData('RT_OTP_LIST', DEFAULT_OTPS)
+      if (!currentLocals.some(o => o.id === otpRecord.id)) {
+        setLocalData('RT_OTP_LIST', [otpRecord, ...currentLocals])
+      }
     }
 
     if (!otpRecord) {
@@ -374,15 +386,19 @@ export const db = {
 
     if (firestore) {
       try {
-        await setDoc(doc(firestore, 'rt_access_otp', otpRecord.id), updatedOtp, { merge: true })
+        await Promise.allSettled([
+          setDoc(doc(firestore, 'rt_access_otp', otpRecord.id), updatedOtp, { merge: true }),
+          setDoc(doc(firestore, 'rt_access_otp_code', cleanCode), updatedOtp, { merge: true })
+        ])
       } catch (e) {
         console.error('Failed to update OTP usage in Firestore:', e)
       }
     }
-    const localOtps = getLocalData('RT_OTP_LIST', DEFAULT_OTPS)
+
+    const latestLocalOtps = getLocalData('RT_OTP_LIST', DEFAULT_OTPS)
     setLocalData(
       'RT_OTP_LIST',
-      localOtps.map(o => (o.id === otpRecord.id ? updatedOtp : o))
+      latestLocalOtps.map(o => (o.id === otpRecord.id || String(o.otp_code).trim().toUpperCase() === cleanCode ? updatedOtp : o))
     )
 
     const wargaSession = {
@@ -404,7 +420,9 @@ export const db = {
         const snap = await getDocs(collection(firestore, 'rt_access_otp'))
         if (!snap.empty) {
           const list = snap.docs.map(d => d.data())
-          return list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          const sorted = list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          setLocalData('RT_OTP_LIST', sorted)
+          return sorted
         }
       } catch (e) {
         console.warn('Fallback to local OTPs:', e)
@@ -415,40 +433,51 @@ export const db = {
 
   async createOTP(payload) {
     const firestore = getFirestoreDb()
+    const cleanOtp = String(payload.otp_code || '').trim().toUpperCase()
     const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'otp_' + Date.now()
     const newRecord = {
       id: newId,
       created_at: new Date().toISOString(),
       status: 'active',
       used_count: 0,
-      ...payload
+      ...payload,
+      otp_code: cleanOtp
     }
 
+    // 1. ALWAYS persist to LocalStorage immediately so verification works 100% reliably
+    const localOtps = getLocalData('RT_OTP_LIST', DEFAULT_OTPS)
+    const updatedLocal = [newRecord, ...localOtps.filter(o => o.otp_code !== cleanOtp && o.id !== newId)]
+    setLocalData('RT_OTP_LIST', updatedLocal)
+
+    // 2. Also persist to Firestore if available (both under unique ID and direct OTP code key)
     if (firestore) {
       try {
-        await setDoc(doc(firestore, 'rt_access_otp', newId), newRecord)
-        return newRecord
+        await Promise.allSettled([
+          setDoc(doc(firestore, 'rt_access_otp', newId), newRecord),
+          setDoc(doc(firestore, 'rt_access_otp_code', cleanOtp), newRecord)
+        ])
       } catch (e) {
-        console.error('Firestore create OTP error:', e)
+        console.warn('Firestore create OTP fallback to local:', e)
       }
     }
 
-    const all = await this.getOTPList()
-    const updated = [newRecord, ...all]
-    setLocalData('RT_OTP_LIST', updated)
     return newRecord
   },
 
   async revokeOTP(id) {
     const firestore = getFirestoreDb()
+    const all = await this.getOTPList()
+    const target = all.find(o => o.id === id)
     if (firestore) {
       try {
         await setDoc(doc(firestore, 'rt_access_otp', id), { status: 'revoked' }, { merge: true })
+        if (target?.otp_code) {
+          await setDoc(doc(firestore, 'rt_access_otp_code', String(target.otp_code).trim().toUpperCase()), { status: 'revoked' }, { merge: true })
+        }
       } catch (e) {
         console.error('Firestore revoke OTP error:', e)
       }
     }
-    const all = await this.getOTPList()
     const updated = all.map(o => (o.id === id ? { ...o, status: 'revoked' } : o))
     setLocalData('RT_OTP_LIST', updated)
     return true
@@ -456,14 +485,18 @@ export const db = {
 
   async deleteOTP(id) {
     const firestore = getFirestoreDb()
+    const all = await this.getOTPList()
+    const target = all.find(o => o.id === id)
     if (firestore) {
       try {
         await deleteDoc(doc(firestore, 'rt_access_otp', id))
+        if (target?.otp_code) {
+          await deleteDoc(doc(firestore, 'rt_access_otp_code', String(target.otp_code).trim().toUpperCase()))
+        }
       } catch (e) {
         console.error('Firestore delete OTP error:', e)
       }
     }
-    const all = await this.getOTPList()
     const filtered = all.filter(o => o.id !== id)
     setLocalData('RT_OTP_LIST', filtered)
     return true

@@ -21,7 +21,8 @@ import {
   Mail,
   ArrowLeft,
   Check,
-  ExternalLink
+  ExternalLink,
+  Copy
 } from 'lucide-react'
 
 export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
@@ -97,6 +98,7 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
 
       if (res.success) {
         setGeneratedResult(res)
+        setOtpCode(res.otp_code)
       } else {
         if (res.notRegistered) {
           setNotRegisteredInfo(res.message)
@@ -113,6 +115,7 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
 
   const handleUseGeneratedOtp = () => {
     if (generatedResult?.otp_code) {
+      setOtpCode(generatedResult.otp_code)
       handleVerify(generatedResult.otp_code)
     }
   }
@@ -235,6 +238,9 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
               onClick={() => {
                 setActiveTab('otp')
                 setErrorMsg('')
+                if (generatedResult?.otp_code) {
+                  setOtpCode(generatedResult.otp_code)
+                }
               }}
               className={`flex-1 py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 ${
                 activeTab === 'otp'
@@ -728,9 +734,23 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
 
                       <div className="bg-[#0c1322] p-4 rounded-xl border border-emerald-500/30">
                         <p className="text-[11px] text-slate-400 mb-1">Kode Akses OTP Dinamis Anda:</p>
-                        <span className="text-3xl font-mono font-black tracking-widest text-emerald-400 block">
-                          {generatedResult.otp_code}
-                        </span>
+                        <div className="flex items-center justify-center gap-2.5 my-1">
+                          <span className="text-3xl font-mono font-black tracking-widest text-emerald-400">
+                            {generatedResult.otp_code}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(generatedResult.otp_code)
+                              alert('Kode OTP disalin: ' + generatedResult.otp_code)
+                            }}
+                            className="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-[10px] font-bold rounded-lg border border-emerald-500/30 transition flex items-center gap-1"
+                            title="Salin kode OTP"
+                          >
+                            <Copy className="w-3 h-3" />
+                            Salin
+                          </button>
+                        </div>
                         <span className="text-[10px] text-amber-400 font-semibold block mt-1">
                           Berlaku selama 30 menit (Sekali Pakai)
                         </span>
