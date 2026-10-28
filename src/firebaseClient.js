@@ -329,9 +329,9 @@ export const db = {
 
     const profile = await this.getProfile()
 
-    // 1. Check Admin PIN
+    // 1. Check Admin PIN (accepts configured admin PIN, standard default '123456', or previous pin '568248')
     const adminPin = String(profile.admin_pin || '123456').trim()
-    if (cleanCode === adminPin) {
+    if (cleanCode === adminPin || cleanCode === '123456' || cleanCode === '568248') {
       const adminSession = {
         role: 'pengurus',
         nama: profile.nama_ketua_rt || 'Pengurus RT',
