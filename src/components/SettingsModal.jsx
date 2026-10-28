@@ -360,9 +360,9 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
                   </div>
 
                   <div className="sm:col-span-3">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
                       <span>Link Donasi Trakteer Pak RT</span>
-                      <span className="text-[10px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded font-bold border border-rose-200">
+                      <span className="text-[10px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded font-bold border border-rose-500/30">
                         🍜 Mie Ayam
                       </span>
                     </label>
@@ -371,7 +371,7 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
                       placeholder="https://trakteer.id/username"
                       value={profileData.trakteer_url || ''}
                       onChange={e => setProfileData({ ...profileData, trakteer_url: e.target.value })}
-                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-rose-500"
+                      className="w-full px-3 py-2 text-xs bg-[#0c1322] rounded-xl border border-white/10 font-mono text-amber-300 focus:border-amber-400 focus:outline-none"
                     />
                     <p className="text-[11px] text-slate-400 mt-1">
                       Link ini ditampilkan pada notifikasi melayang di pojok kiri bawah menu warga untuk mendukung Pak RT.
