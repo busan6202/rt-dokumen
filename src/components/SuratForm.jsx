@@ -25,7 +25,13 @@ import {
   Calendar,
   Hash,
   ShieldCheck,
-  Lock
+  Lock,
+  Camera,
+  Trash2,
+  Eye,
+  ShieldAlert,
+  X,
+  Upload
 } from 'lucide-react'
 
 // Icon mapping
@@ -53,6 +59,11 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
   const [tanggalSurat, setTanggalSurat] = useState(new Date().toISOString().split('T')[0])
   const [keperluan, setKeperluan] = useState(JENIS_SURAT_CONFIG[0].defaultKeperluan)
 
+  // Local-Only Attachments (Foto KTP & KK disimpan khusus di LocalStorage)
+  const [fotoKtp, setFotoKtp] = useState(null)
+  const [fotoKk, setFotoKk] = useState(null)
+  const [previewZoom, setPreviewZoom] = useState(null)
+
   // Pemohon data
   const [pemohon, setPemohon] = useState({
     nik: '',
@@ -63,6 +74,7 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
     tanggal_lahir: '',
     agama: 'Islam',
     status_perkawinan: 'Kawin',
+    status_tinggal: 'Tetap',
     pekerjaan: '',
     kewarganegaraan: 'WNI',
     alamat: '',
@@ -164,6 +176,7 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
       tanggal_lahir: w.tanggal_lahir || '',
       agama: w.agama || 'Islam',
       status_perkawinan: w.status_perkawinan || 'Kawin',
+      status_tinggal: w.status_tinggal || 'Tetap',
       pekerjaan: w.pekerjaan || '',
       kewarganegaraan: w.kewarganegaraan || 'WNI',
       alamat: w.alamat || '',
@@ -198,6 +211,65 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
     w.nama_lengkap.toLowerCase().includes(wargaSearch.toLowerCase()) ||
     w.nik.includes(wargaSearch)
   )
+
+  // Auto load previously attached KTP/KK on this device for the same NIK
+  useEffect(() => {
+    if (pemohon.nik) {
+      try {
+        const raw = localStorage.getItem(`RT_DOCS_${pemohon.nik}`)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (parsed.foto_ktp && !fotoKtp) setFotoKtp(parsed.foto_ktp)
+          if (parsed.foto_kk && !fotoKk) setFotoKk(parsed.foto_kk)
+        }
+      } catch (e) {}
+    }
+  }, [pemohon.nik])
+
+  // Handle image upload and compression (Max 1000px, JPEG 0.78 for optimal speed & localStorage safety)
+  const handleFileUpload = (e, type) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Mohon pilih file gambar (JPG, PNG, atau WEBP).')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const maxDim = 1000
+        let { width, height } = img
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width)
+            width = maxDim
+          } else {
+            width = Math.round((width * maxDim) / height)
+            height = maxDim
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.78)
+
+        if (type === 'ktp') {
+          setFotoKtp(compressedBase64)
+        } else if (type === 'kk') {
+          setFotoKk(compressedBase64)
+        }
+      }
+      img.src = event.target.result
+    }
+    reader.readAsDataURL(file)
+  }
 
   // Submit Handler
   const handleSubmit = async (e) => {
@@ -241,10 +313,35 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
         keperluan: keperluan,
         status: 'Diterbitkan',
         qr_token: token,
+        has_lampiran: !!(fotoKtp || fotoKk),
         signed_by: rtProfile.nama_ketua_rt
       }
 
       const created = await db.saveSurat(suratPayload)
+
+      // CRITICAL REQUIREMENT: Save attachments EXCLUSIVELY to client LocalStorage, NEVER sent to server!
+      if (created && (fotoKtp || fotoKk)) {
+        const attachmentData = {
+          surat_id: created.id,
+          qr_token: token,
+          nik: pemohon.nik,
+          foto_ktp: fotoKtp || null,
+          foto_kk: fotoKk || null,
+          saved_at: new Date().toISOString()
+        }
+        try {
+          if (created.id) localStorage.setItem(`RT_ATTACHMENT_${created.id}`, JSON.stringify(attachmentData))
+          if (token) localStorage.setItem(`RT_ATTACHMENT_${token}`, JSON.stringify(attachmentData))
+          if (pemohon.nik) {
+            localStorage.setItem(`RT_DOCS_${pemohon.nik}`, JSON.stringify({
+              foto_ktp: fotoKtp || null,
+              foto_kk: fotoKk || null
+            }))
+          }
+        } catch (storageErr) {
+          console.warn('Gagal menyimpan foto ke LocalStorage:', storageErr)
+        }
+      }
 
       confetti({
         particleCount: 80,
@@ -621,6 +718,22 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
             />
           </div>
 
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Status Tinggal / Kependudukan
+            </label>
+            <select
+              value={pemohon.status_tinggal || 'Tetap'}
+              onChange={e => setPemohon({ ...pemohon, status_tinggal: e.target.value })}
+              className="w-full px-3.5 py-2.5 text-xs bg-[#0c1322] text-white rounded-xl border border-white/10 focus:border-amber-400 focus:outline-none font-medium"
+            >
+              <option value="Tetap">Warga Tetap RT.25</option>
+              <option value="Kontrak / Kost">Warga Kontrak / Kost</option>
+              <option value="Non-RT.25">Non-RT.25 (Warga Luar RT.25)</option>
+              <option value="Pindah">Pindah Domisili</option>
+            </select>
+          </div>
+
           <div className="md:col-span-2">
             <label className="block text-xs font-semibold text-slate-300 mb-1">
               Alamat Lengkap Domisili / Tempat Tinggal <span className="text-rose-400">*</span>
@@ -834,11 +947,185 @@ export default function SuratForm({ rtProfile, wargaList, onSuratCreated, onCanc
         </div>
       </div>
 
-      {/* 4. PENOMORAN & TANGGAL SURAT */}
+      {/* 4. LAMPIRAN DOKUMEN IDENTITAS (FOTO KTP & KARTU KELUARGA - LOKAL ONLY) */}
+      <div className="bg-[#131c2e] p-6 sm:p-7 rounded-2xl border border-white/[0.08] shadow-xl space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 flex items-center justify-center font-mono font-bold text-sm">
+              4
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                  Lampiran Dokumen Identitas (Foto KTP & Kartu Keluarga)
+                </h3>
+                <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-amber-400/15 text-amber-300 border border-amber-400/30">
+                  Lokal Smartphone
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Unggah foto KTP dan Kartu Keluarga untuk kelengkapan arsip surat Anda
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Security & Privacy Notice */}
+        <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl flex items-start gap-2.5 text-xs text-emerald-200">
+          <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            <strong className="text-emerald-300">Privasi & Keamanan Terjamin:</strong> File foto KTP dan Kartu Keluarga hanya tersimpan secara lokal di peramban/smartphone Anda sendiri (LocalStorage) dan <strong className="text-white">TIDAK disimpan ke server/cloud</strong>.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+          {/* UPLOAD FOTO KTP */}
+          <div className="p-4 bg-[#0c1322] rounded-xl border border-white/10 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5 text-amber-400" />
+                Foto KTP Pemohon
+              </span>
+              {fotoKtp && (
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Terlampir
+                </span>
+              )}
+            </div>
+
+            {fotoKtp ? (
+              <div className="space-y-2">
+                <div className="relative group rounded-xl overflow-hidden border border-white/10 bg-black/40 h-36 flex items-center justify-center">
+                  <img src={fotoKtp} alt="Foto KTP" className="max-h-full max-w-full object-contain" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewZoom({ title: 'Foto KTP Pemohon', src: fotoKtp })}
+                      className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-semibold backdrop-blur-xs flex items-center gap-1"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Lihat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFotoKtp(null)}
+                      className="px-3 py-1.5 bg-rose-500/40 hover:bg-rose-500/60 text-white rounded-lg text-xs font-semibold backdrop-blur-xs flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Hapus
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-slate-400">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewZoom({ title: 'Foto KTP Pemohon', src: fotoKtp })}
+                    className="text-amber-400 hover:underline flex items-center gap-1"
+                  >
+                    <Eye className="w-3 h-3" /> Perbesar Foto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFotoKtp(null)}
+                    className="text-rose-400 hover:underline"
+                  >
+                    Ganti Foto
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="border-2 border-dashed border-white/15 hover:border-amber-400/50 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition bg-white/[0.02] hover:bg-white/[0.04] text-center">
+                <div className="w-10 h-10 rounded-xl bg-amber-400/10 text-amber-400 flex items-center justify-center mb-2">
+                  <Camera className="w-5 h-5" />
+                </div>
+                <span className="text-xs font-bold text-white">Ambil Foto / Pilih File KTP</span>
+                <span className="text-[10px] text-slate-400 mt-1">Format JPG, PNG, atau WEBP</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={e => handleFileUpload(e, 'ktp')}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+
+          {/* UPLOAD FOTO KK */}
+          <div className="p-4 bg-[#0c1322] rounded-xl border border-white/10 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-amber-400" />
+                Foto Kartu Keluarga (KK)
+              </span>
+              {fotoKk && (
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Terlampir
+                </span>
+              )}
+            </div>
+
+            {fotoKk ? (
+              <div className="space-y-2">
+                <div className="relative group rounded-xl overflow-hidden border border-white/10 bg-black/40 h-36 flex items-center justify-center">
+                  <img src={fotoKk} alt="Foto KK" className="max-h-full max-w-full object-contain" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewZoom({ title: 'Foto Kartu Keluarga (KK)', src: fotoKk })}
+                      className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-semibold backdrop-blur-xs flex items-center gap-1"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Lihat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFotoKk(null)}
+                      className="px-3 py-1.5 bg-rose-500/40 hover:bg-rose-500/60 text-white rounded-lg text-xs font-semibold backdrop-blur-xs flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Hapus
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-slate-400">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewZoom({ title: 'Foto Kartu Keluarga (KK)', src: fotoKk })}
+                    className="text-amber-400 hover:underline flex items-center gap-1"
+                  >
+                    <Eye className="w-3 h-3" /> Perbesar Foto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFotoKk(null)}
+                    className="text-rose-400 hover:underline"
+                  >
+                    Ganti Foto
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="border-2 border-dashed border-white/15 hover:border-amber-400/50 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition bg-white/[0.02] hover:bg-white/[0.04] text-center">
+                <div className="w-10 h-10 rounded-xl bg-amber-400/10 text-amber-400 flex items-center justify-center mb-2">
+                  <Camera className="w-5 h-5" />
+                </div>
+                <span className="text-xs font-bold text-white">Ambil Foto / Pilih File KK</span>
+                <span className="text-[10px] text-slate-400 mt-1">Format JPG, PNG, atau WEBP</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={e => handleFileUpload(e, 'kk')}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 5. PENOMORAN & TANGGAL SURAT */}
       <div className="bg-[#131c2e] p-6 sm:p-7 rounded-2xl border border-white/[0.08] shadow-xl">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 flex items-center justify-center font-mono font-bold text-sm">
-            4
+            5
           </div>
           <div>
             <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">Penomoran Dokumen & Tanggal Terbit</h3>

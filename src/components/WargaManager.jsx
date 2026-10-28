@@ -173,7 +173,16 @@ export default function WargaManager({ wargaList, onRefreshWarga, rtProfile }) {
                     </td>
                     <td className="px-5 py-3.5 text-xs max-w-xs">
                       <p className="text-slate-200 truncate" title={w.alamat}>{w.alamat}</p>
-                      <p className="text-slate-400 text-[10px] font-mono">RT {w.rt || '00'} / RW {w.rw || '00'}</p>
+                      <p className="text-slate-400 text-[10px] font-mono flex items-center gap-1.5 mt-0.5">
+                        <span>RT {w.rt || '00'} / RW {w.rw || '00'}</span>
+                        {w.status_tinggal === 'Non-RT.25' ? (
+                          <span className="px-1.5 py-0.2 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded font-semibold text-[9px]">
+                            Non-RT.25
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">• {w.status_tinggal || 'Tetap'}</span>
+                        )}
+                      </p>
                     </td>
                     <td className="px-5 py-3.5 text-xs">
                       {w.no_hp ? (
@@ -368,6 +377,7 @@ export default function WargaManager({ wargaList, onRefreshWarga, rtProfile }) {
                   >
                     <option value="Tetap">Warga Tetap</option>
                     <option value="Kontrak / Kost">Warga Kontrak / Kost</option>
+                    <option value="Non-RT.25">Non-RT.25</option>
                     <option value="Pindah">Pindah Domisili</option>
                   </select>
                 </div>

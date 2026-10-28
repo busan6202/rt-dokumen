@@ -1,10 +1,27 @@
 import React, { useEffect, useState } from 'react'
 import { formatTanggalIndo, generateQRCodeDataUrl } from '../utils/helpers'
-import { ShieldCheck, Printer, ArrowLeft, Download, CheckCircle, Copy, FileText, Check } from 'lucide-react'
+import {
+  ShieldCheck,
+  Printer,
+  ArrowLeft,
+  Download,
+  CheckCircle,
+  Copy,
+  FileText,
+  Check,
+  CreditCard,
+  Eye,
+  X,
+  Camera,
+  Image as ImageIcon
+} from 'lucide-react'
 
 export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
   const [qrDataUrl, setQrDataUrl] = useState('')
   const [copiedLink, setCopiedLink] = useState(false)
+  const [attachments, setAttachments] = useState(null)
+  const [includeAttachmentInPrint, setIncludeAttachmentInPrint] = useState(false)
+  const [zoomImage, setZoomImage] = useState(null)
 
   const verificationUrl = `${window.location.origin}${window.location.pathname}?verify=${surat.qr_token || 'demo'}`
 
@@ -13,6 +30,29 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
       generateQRCodeDataUrl(verificationUrl).then(setQrDataUrl)
     }
   }, [surat?.qr_token, verificationUrl])
+
+  // Load local-only attachments from LocalStorage on this device
+  useEffect(() => {
+    if (surat) {
+      try {
+        let raw = surat.id ? localStorage.getItem(`RT_ATTACHMENT_${surat.id}`) : null
+        if (!raw && surat.qr_token) {
+          raw = localStorage.getItem(`RT_ATTACHMENT_${surat.qr_token}`)
+        }
+        if (!raw && surat.pemohon_nik) {
+          raw = localStorage.getItem(`RT_DOCS_${surat.pemohon_nik}`)
+        }
+        if (!raw && surat.pemohon_data?.nik) {
+          raw = localStorage.getItem(`RT_DOCS_${surat.pemohon_data.nik}`)
+        }
+        if (raw) {
+          setAttachments(JSON.parse(raw))
+        }
+      } catch (e) {
+        console.warn('Gagal memuat lampiran lokal:', e)
+      }
+    }
+  }, [surat])
 
   const copyVerifyLink = () => {
     navigator.clipboard.writeText(verificationUrl)
@@ -195,9 +235,18 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
                     <td className="py-0.5 align-top">Alamat KTP / Domisili</td>
                     <td className="py-0.5 align-top">:</td>
                     <td className="py-0.5">
-                      {pemohon.alamat || '-'} RT {pemohon.rt || rtProfile.rt_number} / RW {pemohon.rw || rtProfile.rw_number}, Kelurahan {rtProfile.kelurahan}, Kecamatan {rtProfile.kecamatan}, {rtProfile.kota_kabupaten}
+                      {pemohon.alamat || '-'} {pemohon.status_tinggal === 'Non-RT.25' ? '(Alamat Luar RT.25)' : `RT ${pemohon.rt || rtProfile.rt_number} / RW ${pemohon.rw || rtProfile.rw_number}, Kelurahan ${rtProfile.kelurahan}, Kecamatan ${rtProfile.kecamatan}, ${rtProfile.kota_kabupaten}`}
                     </td>
                   </tr>
+                  {pemohon.status_tinggal && (
+                    <tr>
+                      <td className="py-0.5 align-top">Status Kependudukan</td>
+                      <td className="py-0.5 align-top">:</td>
+                      <td className="py-0.5 font-semibold text-slate-900">
+                        {pemohon.status_tinggal === 'Non-RT.25' ? 'Non-RT.25 (Warga Luar RT.25)' : `Warga ${pemohon.status_tinggal}`}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -404,7 +453,226 @@ export default function SuratPreview({ surat, rtProfile, onBack, onPrint }) {
             </div>
           </div>
         </div>
+
+        {/* PRINTABLE SECOND PAGE: LAMPIRAN FOTO KTP & KK (Only printed if enabled) */}
+        {includeAttachmentInPrint && (attachments?.foto_ktp || attachments?.foto_kk) && (
+          <div
+            id="printable-attachment-sheet"
+            className="paper-sheet bg-white w-full max-w-[210mm] min-h-[297mm] p-8 md:p-14 shadow-2xl rounded-sm font-formal text-black relative flex flex-col justify-between mt-8 print:mt-0 print:break-before-page"
+            style={{ boxSizing: 'border-box' }}
+          >
+            <div>
+              {/* Header Lampiran */}
+              <div className="border-b-2 border-black pb-3 mb-6 text-center">
+                <h2 className="font-bold text-base md:text-lg uppercase tracking-wider text-black">
+                  LAMPIRAN DOKUMEN IDENTITAS KEPENDUDUKAN
+                </h2>
+                <p className="text-xs font-mono text-slate-700 mt-1">
+                  Lampiran Resmi Surat Pengantar Nomor: <span className="font-bold">{surat.nomor_surat}</span>
+                </p>
+                <p className="text-xs font-semibold text-slate-800 uppercase mt-0.5">
+                  Nama Pemohon: {pemohon.nama_lengkap} • NIK: {pemohon.nik}
+                </p>
+              </div>
+
+              {/* Grid 2 Foto Dokumen */}
+              <div className="space-y-6">
+                {attachments?.foto_ktp && (
+                  <div className="border border-slate-300 rounded p-4 text-center bg-slate-50">
+                    <p className="font-bold text-xs uppercase mb-2 text-slate-800">
+                      1. FOTO KARTU TANDA PENDUDUK (KTP)
+                    </p>
+                    <div className="h-60 flex items-center justify-center bg-white p-2 border border-slate-200 rounded">
+                      <img
+                        src={attachments.foto_ktp}
+                        alt="Lampiran KTP"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {attachments?.foto_kk && (
+                  <div className="border border-slate-300 rounded p-4 text-center bg-slate-50">
+                    <p className="font-bold text-xs uppercase mb-2 text-slate-800">
+                      2. FOTO KARTU KELUARGA (KK)
+                    </p>
+                    <div className="h-60 flex items-center justify-center bg-white p-2 border border-slate-200 rounded">
+                      <img
+                        src={attachments.foto_kk}
+                        alt="Lampiran KK"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer Cetak Lampiran */}
+            <div className="border-t border-slate-300 pt-3 flex justify-between items-center text-[10px] text-slate-500 font-sans">
+              <span>Dokumen lampiran identitas kependudukan tersimpan lokal di smartphone pemohon.</span>
+              <span className="font-mono">{rtProfile.kota_kabupaten}, {formatTanggalIndo(surat.tanggal_surat || new Date())}</span>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* NO-PRINT: LAMPIRAN DOKUMEN IDENTITAS CARD (Screen UI for Smartphone & Desktop) */}
+      <div className="no-print max-w-4xl mx-auto bg-[#131c2e] p-6 rounded-2xl border border-white/[0.08] shadow-xl space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 flex items-center justify-center">
+              <CreditCard className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white tracking-tight">
+                  Lampiran Dokumen Identitas (Foto KTP & KK)
+                </h3>
+                <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-amber-400/15 text-amber-300 border border-amber-400/30">
+                  Lokal Smartphone
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Dokumen disimpan di penyimpanan internal perangkat Anda (tidak diunggah ke server)
+              </p>
+            </div>
+          </div>
+
+          {(attachments?.foto_ktp || attachments?.foto_kk) && (
+            <label className="flex items-center gap-2 px-3 py-1.5 bg-[#0c1322] hover:bg-[#162033] border border-white/10 rounded-xl text-xs text-slate-300 cursor-pointer transition">
+              <input
+                type="checkbox"
+                checked={includeAttachmentInPrint}
+                onChange={e => setIncludeAttachmentInPrint(e.target.checked)}
+                className="rounded accent-amber-400 w-3.5 h-3.5"
+              />
+              <span className="font-medium text-amber-300">Sertakan lampiran saat Cetak / PDF</span>
+            </label>
+          )}
+        </div>
+
+        {/* Security Alert Note */}
+        <div className="p-3 bg-emerald-500/10 border border-emerald-500/25 rounded-xl flex items-start gap-2.5 text-xs text-emerald-200">
+          <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            <strong className="text-emerald-300">Privasi Data Terlindungi:</strong> Sesuai standar keamanan data pribadi kependudukan, file foto KTP & Kartu Keluarga hanya tersimpan secara lokal di smartphone/peramban Anda sendiri dan <strong>TIDAK disimpan di server database</strong>.
+          </p>
+        </div>
+
+        {/* Attachments Preview Grid */}
+        {attachments?.foto_ktp || attachments?.foto_kk ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            {/* Foto KTP */}
+            <div className="p-4 bg-[#0c1322] rounded-xl border border-white/10 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-amber-400" />
+                  Foto KTP Pemohon
+                </span>
+                {attachments.foto_ktp && (
+                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">
+                    Tersedia di Perangkat Ini
+                  </span>
+                )}
+              </div>
+
+              {attachments.foto_ktp ? (
+                <div className="space-y-2">
+                  <div
+                    onClick={() => setZoomImage({ title: 'Foto KTP Pemohon', src: attachments.foto_ktp })}
+                    className="relative group rounded-xl overflow-hidden border border-white/10 bg-black/40 h-40 flex items-center justify-center cursor-pointer"
+                  >
+                    <img src={attachments.foto_ktp} alt="KTP" className="max-h-full max-w-full object-contain" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="px-3 py-1.5 bg-amber-400 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-1">
+                        <Eye className="w-3.5 h-3.5" /> Perbesar Foto
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 text-center text-xs text-slate-500 border border-dashed border-white/10 rounded-xl">
+                  Tidak ada lampiran foto KTP untuk surat ini
+                </div>
+              )}
+            </div>
+
+            {/* Foto KK */}
+            <div className="p-4 bg-[#0c1322] rounded-xl border border-white/10 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-amber-400" />
+                  Foto Kartu Keluarga (KK)
+                </span>
+                {attachments.foto_kk && (
+                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">
+                    Tersedia di Perangkat Ini
+                  </span>
+                )}
+              </div>
+
+              {attachments.foto_kk ? (
+                <div className="space-y-2">
+                  <div
+                    onClick={() => setZoomImage({ title: 'Foto Kartu Keluarga (KK)', src: attachments.foto_kk })}
+                    className="relative group rounded-xl overflow-hidden border border-white/10 bg-black/40 h-40 flex items-center justify-center cursor-pointer"
+                  >
+                    <img src={attachments.foto_kk} alt="KK" className="max-h-full max-w-full object-contain" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="px-3 py-1.5 bg-amber-400 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-1">
+                        <Eye className="w-3.5 h-3.5" /> Perbesar Foto
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 text-center text-xs text-slate-500 border border-dashed border-white/10 rounded-xl">
+                  Tidak ada lampiran foto Kartu Keluarga untuk surat ini
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="p-5 text-center bg-[#0c1322] rounded-xl border border-white/10 text-xs text-slate-400 space-y-1">
+            <p className="font-semibold text-slate-300">Tidak ada lampiran foto KTP/KK yang tersimpan di perangkat ini.</p>
+            <p className="text-[11px] text-slate-500">
+              Jika surat dibuat dari ponsel lain, lampiran foto disimpan di ponsel pembuat dokumen dan tidak diunggah ke server demi privasi data.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Modal Zoom Preview */}
+      {zoomImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#131c2e] max-w-3xl w-full rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[#0c1322]">
+              <h4 className="text-sm font-bold text-white">{zoomImage.title}</h4>
+              <button
+                type="button"
+                onClick={() => setZoomImage(null)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 flex items-center justify-center bg-black/50 max-h-[75vh] overflow-auto">
+              <img src={zoomImage.src} alt={zoomImage.title} className="max-h-[70vh] w-auto object-contain rounded-lg" />
+            </div>
+            <div className="p-3 bg-[#0c1322] border-t border-white/10 text-right">
+              <button
+                type="button"
+                onClick={() => setZoomImage(null)}
+                className="px-4 py-2 bg-amber-400 text-slate-950 font-bold text-xs rounded-xl"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
