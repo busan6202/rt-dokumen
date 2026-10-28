@@ -12,7 +12,7 @@ export default function TrakteerFloatingWidget({ trakteerUrl }) {
 
   if (isMinimized) {
     return (
-      <div className="fixed bottom-5 left-5 z-40 no-print animate-in fade-in slide-in-from-bottom-3 duration-200">
+      <div className="fixed bottom-20 sm:bottom-5 left-4 sm:left-5 z-40 no-print animate-in fade-in slide-in-from-bottom-3 duration-200">
         <button
           type="button"
           onClick={() => setIsMinimized(false)}
@@ -34,7 +34,7 @@ export default function TrakteerFloatingWidget({ trakteerUrl }) {
   return (
     <aside
       aria-label="Donasi Trakteer Pak RT"
-      className="fixed bottom-5 left-5 z-40 no-print max-w-[280px] sm:max-w-[300px] bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-rose-200/80 animate-in fade-in slide-in-from-bottom-5 duration-300"
+      className="fixed bottom-20 sm:bottom-5 left-4 sm:left-5 z-40 no-print max-w-[280px] sm:max-w-[300px] bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-rose-200/80 animate-in fade-in slide-in-from-bottom-5 duration-300"
     >
       {/* Header bar */}
       <div className="flex items-start justify-between gap-2 mb-2">

@@ -119,25 +119,37 @@ const DEFAULT_WARGA = [
 
 const DEFAULT_OTPS = []
 
+// Built-in official Google Cloud Firestore serverless credentials
+const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyDPMp_diJ_gg73hhtULOv-QQex8SuG6IWA',
+  authDomain: 'rt-dokumen.firebaseapp.com',
+  projectId: 'rt-dokumen',
+  storageBucket: 'rt-dokumen.appspot.com',
+  messagingSenderId: '750017241098',
+  appId: '1:750017241098:web:3774bdf1ab659a9caf7ff3'
+}
 
-// Get Firebase configuration from LocalStorage or Vite Env
+// Get Firebase configuration from LocalStorage, Vite Env, or Built-in Official Config
 export const getFirebaseConfig = () => {
   const localConfigStr = localStorage.getItem('RT_FIREBASE_CONFIG')
   if (localConfigStr) {
     try {
-      return JSON.parse(localConfigStr)
+      const parsed = JSON.parse(localConfigStr)
+      if (parsed.apiKey && parsed.projectId) {
+        return parsed
+      }
     } catch (e) {
       console.error(e)
     }
   }
 
   return {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-    appId: import.meta.env.VITE_FIREBASE_APP_ID || ''
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || DEFAULT_FIREBASE_CONFIG.apiKey,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || DEFAULT_FIREBASE_CONFIG.authDomain,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || DEFAULT_FIREBASE_CONFIG.projectId,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || DEFAULT_FIREBASE_CONFIG.storageBucket,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || DEFAULT_FIREBASE_CONFIG.messagingSenderId,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || DEFAULT_FIREBASE_CONFIG.appId
   }
 }
 
@@ -330,13 +342,11 @@ export const db = {
       return { success: true, role: 'pengurus', session: adminSession }
     }
 
-    // 2. Check in LocalStorage first (instant match, guaranteed reliable on the current browser/device)
-    const localOtps = getLocalData('RT_OTP_LIST', DEFAULT_OTPS)
-    let otpRecord = localOtps.find(o => String(o.otp_code || '').trim().toUpperCase() === cleanCode)
-
-    // 3. If not found in LocalStorage, check in Firestore
+    // 2. PRIMARY: Check in Cloud Firestore (authoritative for multi-device serverless access)
     const firestore = getFirestoreDb()
-    if (!otpRecord && firestore) {
+    let otpRecord = null
+
+    if (firestore) {
       try {
         // Direct document lookup by OTP code (fastest O(1), no query index needed)
         const directSnap = await getDoc(doc(firestore, 'rt_access_otp_code', cleanCode))
@@ -351,8 +361,14 @@ export const db = {
           }
         }
       } catch (e) {
-        console.warn('Firestore OTP lookup error:', e)
+        console.warn('Firestore OTP lookup error, falling back to local cache:', e)
       }
+    }
+
+    // 3. Fallback: Check LocalStorage if offline or Firestore query had temporary network hitch
+    if (!otpRecord) {
+      const localOtps = getLocalData('RT_OTP_LIST', DEFAULT_OTPS)
+      otpRecord = localOtps.find(o => String(o.otp_code || '').trim().toUpperCase() === cleanCode)
     }
 
     // Cache to LocalStorage if retrieved from Firestore

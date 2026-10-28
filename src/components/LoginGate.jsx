@@ -228,6 +228,12 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
           <p className="text-xs text-slate-400 mt-1">
             Kelurahan {rtProfile?.kelurahan || '-'}, Kecamatan {rtProfile?.kecamatan || '-'}
           </p>
+          <div className="flex items-center justify-center gap-2 mt-2.5">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] text-emerald-400 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Cloud Database Terhubung
+            </span>
+          </div>
         </div>
 
         {/* 3 Tabs Selection (Only shown when not in Forgot PIN mode) */}
@@ -561,10 +567,11 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
                     </p>
                   </div>
 
-                  <div>
+                  <div className="relative">
                     <input
                       type="text"
                       maxLength={10}
+                      inputMode="numeric"
                       autoFocus
                       required
                       placeholder="Contoh: 742918"
@@ -572,6 +579,21 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
                       onChange={e => setOtpCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())}
                       className="w-full text-center tracking-widest text-2xl font-mono font-bold py-3.5 px-4 bg-[#0c1322] rounded-2xl border border-white/15 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 text-amber-300 transition uppercase"
                     />
+                    {typeof navigator !== 'undefined' && navigator.clipboard && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const text = await navigator.clipboard.readText()
+                            if (text) setOtpCode(text.trim().toUpperCase())
+                          } catch (e) {}
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 px-2.5 py-1 text-[10px] font-bold text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 rounded-lg transition"
+                        title="Tempel dari Clipboard"
+                      >
+                        Tempel
+                      </button>
+                    )}
                   </div>
 
                   {errorMsg && (
@@ -641,6 +663,7 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
                           type="text"
                           required
                           maxLength={16}
+                          inputMode="numeric"
                           placeholder="Masukkan 16 digit NIK sesuai KTP"
                           value={reqNik}
                           onChange={e => setReqNik(e.target.value.replace(/\D/g, ''))}
@@ -653,8 +676,9 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
                           Nomor WhatsApp / HP Aktif <span className="text-rose-400">*</span>
                         </label>
                         <input
-                          type="text"
+                          type="tel"
                           required
+                          inputMode="tel"
                           placeholder="Contoh: 081234567890"
                           value={reqHp}
                           onChange={e => setReqHp(e.target.value.replace(/\D/g, ''))}
@@ -793,6 +817,7 @@ export default function LoginGate({ rtProfile, onLoginSuccess, initialOtp }) {
                     <input
                       type="password"
                       maxLength={12}
+                      inputMode="numeric"
                       autoFocus
                       required
                       placeholder="Masukkan PIN Admin Pengurus"

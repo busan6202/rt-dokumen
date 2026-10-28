@@ -333,69 +333,10 @@ export default function App() {
             </div>
           </div>
         </div>
-
-        {/* Mobile Navigation */}
-        <div className="md:hidden border-t border-white/[0.08] flex justify-around p-2 bg-[#0c1322] text-xs">
-          {isPengurus && (
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`flex flex-col items-center py-1 px-2 rounded-lg ${
-                activeTab === 'dashboard' ? 'text-amber-400 font-bold' : 'text-slate-400'
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              <span className="text-[10px] mt-0.5">Beranda</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => setActiveTab('form')}
-            className={`flex flex-col items-center py-1 px-2 rounded-lg ${
-              activeTab === 'form' ? 'text-amber-400 font-bold' : 'text-slate-400'
-            }`}
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span className="text-[10px] mt-0.5">Buat</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('arsip')}
-            className={`flex flex-col items-center py-1 px-2 rounded-lg ${
-              activeTab === 'arsip' ? 'text-amber-400 font-bold' : 'text-slate-400'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span className="text-[10px] mt-0.5">Arsip ({displaySuratList.length})</span>
-          </button>
-
-          {isPengurus && (
-            <>
-              <button
-                onClick={() => setActiveTab('warga')}
-                className={`flex flex-col items-center py-1 px-2 rounded-lg ${
-                  activeTab === 'warga' ? 'text-amber-400 font-bold' : 'text-slate-400'
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                <span className="text-[10px] mt-0.5">Warga</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('otp')}
-                className={`flex flex-col items-center py-1 px-2 rounded-lg ${
-                  activeTab === 'otp' ? 'text-amber-400 font-bold' : 'text-slate-400'
-                }`}
-              >
-                <KeyRound className="w-4 h-4" />
-                <span className="text-[10px] mt-0.5">OTP</span>
-              </button>
-            </>
-          )}
-        </div>
       </header>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-28 md:py-8">
         {activeTab === 'dashboard' && isPengurus && (
           <Dashboard
             rtProfile={rtProfile}
@@ -495,6 +436,126 @@ export default function App() {
       {!isPengurus && (
         <TrakteerFloatingWidget trakteerUrl={rtProfile?.trakteer_url} />
       )}
+
+      {/* FLOATING MOBILE BOTTOM NAVIGATION BAR - Native App Style */}
+      <nav
+        aria-label="Navigasi Bawah Ponsel"
+        className="no-print md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0e1626]/95 backdrop-blur-xl border-t border-white/[0.1] px-2 py-2 shadow-2xl flex items-center justify-around"
+      >
+        {isPengurus ? (
+          <>
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex-1 flex flex-col items-center py-1.5 px-1 rounded-xl transition-all ${
+                activeTab === 'dashboard'
+                  ? 'text-amber-400 font-bold bg-amber-400/10'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="text-[10px] mt-1 tracking-tight">Beranda</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('form')}
+              className={`flex-1 flex flex-col items-center py-1.5 px-1 rounded-xl transition-all ${
+                activeTab === 'form'
+                  ? 'text-amber-400 font-bold bg-amber-400/10'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <PlusCircle className="w-5 h-5" />
+              <span className="text-[10px] mt-1 tracking-tight">Buat</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('arsip')}
+              className={`flex-1 flex flex-col items-center py-1.5 px-1 rounded-xl transition-all relative ${
+                activeTab === 'arsip'
+                  ? 'text-amber-400 font-bold bg-amber-400/10'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              <span className="text-[10px] mt-1 tracking-tight">Arsip</span>
+              {displaySuratList.length > 0 && (
+                <span className="absolute top-1 right-2.5 px-1.5 py-0.2 bg-amber-500 text-slate-950 font-mono text-[9px] font-extrabold rounded-full">
+                  {displaySuratList.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('warga')}
+              className={`flex-1 flex flex-col items-center py-1.5 px-1 rounded-xl transition-all relative ${
+                activeTab === 'warga'
+                  ? 'text-amber-400 font-bold bg-amber-400/10'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              <span className="text-[10px] mt-1 tracking-tight">Warga</span>
+              {wargaList.length > 0 && (
+                <span className="absolute top-1 right-2.5 px-1.5 py-0.2 bg-slate-700 text-amber-300 font-mono text-[9px] font-bold rounded-full">
+                  {wargaList.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('otp')}
+              className={`flex-1 flex flex-col items-center py-1.5 px-1 rounded-xl transition-all ${
+                activeTab === 'otp'
+                  ? 'text-amber-400 font-bold bg-amber-400/10'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <KeyRound className="w-5 h-5" />
+              <span className="text-[10px] mt-1 tracking-tight">OTP</span>
+            </button>
+          </>
+        ) : (
+          /* Warga Bottom Nav */
+          <>
+            <button
+              onClick={() => setActiveTab('form')}
+              className={`flex-1 flex flex-col items-center py-1.5 px-2 rounded-xl transition-all ${
+                activeTab === 'form'
+                  ? 'text-amber-400 font-bold bg-amber-400/10'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <PlusCircle className="w-5 h-5" />
+              <span className="text-[10px] mt-1 tracking-tight">Buat Surat</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('arsip')}
+              className={`flex-1 flex flex-col items-center py-1.5 px-2 rounded-xl transition-all relative ${
+                activeTab === 'arsip'
+                  ? 'text-amber-400 font-bold bg-amber-400/10'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              <span className="text-[10px] mt-1 tracking-tight">Surat Saya</span>
+              {displaySuratList.length > 0 && (
+                <span className="absolute top-1 right-5 px-1.5 py-0.2 bg-amber-500 text-slate-950 font-mono text-[9px] font-extrabold rounded-full">
+                  {displaySuratList.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="flex-1 flex flex-col items-center py-1.5 px-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-all"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="text-[10px] mt-1 tracking-tight">Keluar</span>
+            </button>
+          </>
+        )}
+      </nav>
 
       {/* SETTINGS MODAL */}
       {isSettingsOpen && (

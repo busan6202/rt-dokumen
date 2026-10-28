@@ -72,10 +72,10 @@ export default function Dashboard({
             Portal terpadu penerbitan surat pengantar resmi, surat keterangan kependudukan, buku induk warga, serta verifikasi QR code anti-pemalsuan.
           </p>
 
-          <div className="flex flex-wrap items-center gap-3.5 mt-7">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mt-6 sm:mt-7">
             <button
               onClick={onNewSurat}
-              className="inline-flex items-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all duration-200 active:scale-95"
+              className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all duration-200 active:scale-95"
             >
               <PlusCircle className="w-4 h-4 text-slate-950" />
               Buat Surat Pengantar Baru
@@ -83,7 +83,7 @@ export default function Dashboard({
 
             <button
               onClick={onOpenArsip}
-              className="inline-flex items-center gap-2 px-4.5 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-slate-200 font-semibold text-xs border border-white/10 backdrop-blur-md transition-all duration-200"
+              className="inline-flex items-center justify-center gap-2 px-4.5 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-slate-200 font-semibold text-xs border border-white/10 backdrop-blur-md transition-all duration-200"
             >
               <FileText className="w-4 h-4 text-amber-400" />
               Buku Arsip Registrasi ({suratList.length})
@@ -91,7 +91,7 @@ export default function Dashboard({
 
             <button
               onClick={onOpenWarga}
-              className="inline-flex items-center gap-2 px-4.5 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-slate-200 font-semibold text-xs border border-white/10 backdrop-blur-md transition-all duration-200"
+              className="inline-flex items-center justify-center gap-2 px-4.5 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-slate-200 font-semibold text-xs border border-white/10 backdrop-blur-md transition-all duration-200"
             >
               <Users className="w-4 h-4 text-emerald-400" />
               Buku Warga ({wargaList.length})
