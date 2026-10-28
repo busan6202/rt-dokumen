@@ -15,6 +15,7 @@ import SettingsModal from './components/SettingsModal'
 import VerificationPage from './components/VerificationPage'
 import LoginGate from './components/LoginGate'
 import OtpManager from './components/OtpManager'
+import TrakteerFloatingWidget from './components/TrakteerFloatingWidget'
 import {
   FileText,
   Users,
@@ -489,6 +490,11 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* FLOATING DONASI TRAKTEER KHUSUS WARGA */}
+      {!isPengurus && (
+        <TrakteerFloatingWidget trakteerUrl={rtProfile?.trakteer_url} />
+      )}
 
       {/* SETTINGS MODAL */}
       {isSettingsOpen && (

@@ -34,7 +34,8 @@ const DEFAULT_RT_PROFILE = {
   admin_pin: '123456',
   logo_url: './logo-daerah.png',
   ttd_digital_url: '',
-  stempel_url: ''
+  stempel_url: '',
+  trakteer_url: 'https://trakteer.id/busan6202'
 }
 
 const DEFAULT_WARGA = [

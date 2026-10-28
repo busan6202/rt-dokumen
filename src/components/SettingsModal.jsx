@@ -358,6 +358,25 @@ export default function SettingsModal({ rtProfile, onUpdateProfile, onClose }) {
                       Variabel tersedia: <code className="text-amber-300">{'{nomor}'}</code>, <code className="text-amber-300">{'{rt}'}</code>, <code className="text-amber-300">{'{rw}'}</code>, <code className="text-amber-300">{'{bulan_romawi}'}</code>, <code className="text-amber-300">{'{tahun}'}</code>
                     </p>
                   </div>
+
+                  <div className="sm:col-span-3">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                      <span>Link Donasi Trakteer Pak RT</span>
+                      <span className="text-[10px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded font-bold border border-rose-200">
+                        🍜 Mie Ayam
+                      </span>
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://trakteer.id/username"
+                      value={profileData.trakteer_url || ''}
+                      onChange={e => setProfileData({ ...profileData, trakteer_url: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-rose-500"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Link ini ditampilkan pada notifikasi melayang di pojok kiri bawah menu warga untuk mendukung Pak RT.
+                    </p>
+                  </div>
                 </div>
               </div>
 
